@@ -1,0 +1,58 @@
+version: "3.9"
+
+# Tía Julia — desarrollo local (sección 44).
+# No incluir secretos reales: leer desde .env (backend/.env).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-privva12345}
+      POSTGRES_DB: ${POSTGRES_DB:-tiajulia}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tiajulia"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      APP_NAME: "Tia Julia API"
+      APP_ENV: "development"
+      API_V1_PREFIX: "/api/v1"
+      DATABASE_URL: "postgresql://postgres:${POSTGRES_PASSWORD:-privva12345}@postgres:5432/tiajulia"
+      TIMEZONE: "America/Lima"
+      CORS_ORIGINS: "http://localhost:5173"
+      ML_MODEL_DIR: "./models"
+      REPORT_OUTPUT_DIR: "./generated_reports"
+      LOG_LEVEL: "INFO"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             python scripts/seed.py &&
+             python scripts/generate_demo_sales.py &&
+             python scripts/train_models.py || true &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    volumes:
+      - backend_models:/app/models
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  backend_models:

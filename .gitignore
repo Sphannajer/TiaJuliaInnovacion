@@ -1,0 +1,24 @@
+# Dependencias
+node_modules/
+.venv/
+venv/
+
+# Builds
+frontend/dist/
+*.pyc
+__pycache__/
+.pytest_cache/
+
+# Entorno
+.env
+frontend/.env
+
+# Modelos ML entrenados y reportes generados
+backend/models/*.joblib
+backend/models/*.meta.json
+backend/generated_reports/*.pdf
+backend/generated_reports/*.png
+
+# Sistema
+.DS_Store
+*.log

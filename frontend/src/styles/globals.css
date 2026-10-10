@@ -1,0 +1,1274 @@
+/* ============================================================
+   TÍA JULIA — Tailwind CSS (sistema principal y ÚNICO de estilos, sección 3.1)
+   ------------------------------------------------------------
+   Todo el estilo visual se declara aquí con Tailwind v4:
+     · @theme       → design tokens de marca expuestos como utilidades
+     · @layer base  → elementos nativos
+     · @layer components → componentes semánticos reutilizables (@apply)
+   El marcado (JSX) usa utilidades de Tailwind para composición y estas
+   clases semánticas para piezas reutilizables (botones, tarjetas, tablas…).
+   ============================================================ */
+
+@import "tailwindcss";
+@import "./tokens.css";
+
+/* ------------------------------------------------------------
+   Design tokens expuestos a Tailwind (sección 6 + 3.1)
+   ------------------------------------------------------------ */
+@theme {
+  /* 6.3 Tipografía */
+  --font-ui: "Nunito Sans", system-ui, sans-serif;
+  --font-brand: "Lora", Georgia, serif;
+  --font-sans: "Nunito Sans", system-ui, sans-serif;
+
+  --text-h1: 32px;
+  --text-h1--line-height: var(--lh-h1);
+  --text-h2: 26px;
+  --text-h2--line-height: var(--lh-h2);
+  --text-h3: 22px;
+  --text-h3--line-height: var(--lh-h3);
+  --text-base: 18px;
+  --text-base--line-height: var(--lh-base);
+  --text-important: 20px;
+  --text-important--line-height: var(--lh-important);
+  --text-kpi: 40px;
+  --text-kpi--line-height: 1.1;
+  --text-button: 18px;
+  --text-button--line-height: 24px;
+  --text-aux: 16px;
+  --text-aux--line-height: var(--lh-aux);
+
+  /* 6.4 Radios y sombras */
+  --radius-brand: var(--radius);
+  --radius-panel: var(--radius-modal);
+  --shadow-modal: 0 6px 24px rgba(27, 27, 27, 0.18);
+  --shadow-bar: 0 -2px 10px rgba(27, 27, 27, 0.08);
+  --shadow-card: 0 1px 2px rgba(27, 27, 27, 0.05);
+
+  /* 6.1 Colores de marca + neutros + semánticos */
+  --color-brand-red: var(--brand-red);
+  --color-brand-red-dark: var(--brand-red-dark);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-orange-dark: var(--brand-orange-dark);
+  --color-brand-green: var(--brand-green);
+  --color-brand-beige: var(--brand-beige);
+  --color-brand-bone: var(--brand-bone);
+
+  --color-ink: var(--text-main);
+  --color-ink-soft: var(--text-secondary);
+  --color-surface: var(--surface);
+  --color-line: var(--border);
+  --color-focus: var(--focus);
+  --color-chart-grid: var(--chart-grid);
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-fg: var(--danger-text);
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-fg: var(--warning-text);
+  --color-success-bg: var(--success-bg);
+  --color-success-fg: var(--success-text);
+
+  /* Medios de pago: Efectivo verde, Yape morado */
+  --color-cash: var(--cash-green);
+  --color-yape: var(--yape-purple);
+
+  /* 8.1 Breakpoints de referencia (tablet horizontal 1024×768 primero) */
+  --breakpoint-tablet: 768px;
+  --breakpoint-desktop: 1200px;
+  /* Punto donde el navbar horizontal ya no entra sin partirse (9):
+     por debajo se usa la barra inferior, nunca una segunda fila. */
+  --breakpoint-nav: 1000px;
+}
+
+/* ------------------------------------------------------------
+   Capa base — elementos nativos
+   ------------------------------------------------------------ */
+@layer base {
+  /* Se mantiene el rem estándar (16px) para que la escala de espaciado de
+     Tailwind (0.25rem = 4px) coincida con los tokens --space-*. El cuerpo
+     conserva 18px mediante `text-base` (sección 6.3). */
+  body {
+    @apply m-0 bg-brand-bone font-ui text-base font-medium text-ink;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply m-0 font-extrabold;
+  }
+
+  h1 {
+    @apply text-h1;
+  }
+
+  h2 {
+    @apply text-h2;
+  }
+
+  h3 {
+    @apply text-h3;
+  }
+
+  /* Lora solo para títulos de marca (6.3): nunca en botones ni formularios */
+  .brand-title {
+    @apply font-brand;
+    letter-spacing: 0.2px;
+  }
+
+  p {
+    @apply m-0;
+  }
+
+  a {
+    @apply text-brand-red underline;
+  }
+
+  /* 37: Focus visible 3px en todo */
+  :focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  /* 37: respeta prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------
+   Capa de componentes — sistema visual Tía Julia
+   ------------------------------------------------------------ */
+@layer components {
+  /* ===== Botones: verbos claros, targets grandes, icono + texto (6.6) ===== */
+
+  .btn {
+    @apply inline-flex cursor-pointer select-none items-center justify-center gap-[10px] rounded-brand border-2 border-transparent px-[22px] py-[10px];
+    @apply min-h-[var(--touch-comfort)] font-ui text-button font-extrabold leading-6 transition-colors duration-150;
+  }
+
+  .btn:disabled {
+    @apply cursor-not-allowed opacity-[0.55];
+  }
+
+  .btn-primary {
+    @apply bg-brand-red text-white;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    @apply bg-brand-red-dark;
+  }
+
+  .btn-secondary {
+    @apply border-line bg-surface text-ink;
+  }
+
+  .btn-secondary:hover:not(:disabled) {
+    @apply border-ink-soft bg-brand-bone;
+  }
+
+  .btn-green {
+    @apply bg-brand-green text-white;
+  }
+
+  .btn-green:hover:not(:disabled) {
+    filter: brightness(0.92);
+  }
+
+  .btn-danger {
+    @apply border-[#E5B8B8] bg-danger-bg text-danger-fg;
+  }
+
+  .btn-danger:hover:not(:disabled) {
+    background: #F6D5D5;
+  }
+
+  .btn-large {
+    @apply min-h-[var(--touch-large)] px-[28px] py-[12px] text-important;
+  }
+
+  .btn-block {
+    @apply w-full;
+  }
+
+  /* ===== Formularios — labels asociados, errores al lado del campo ===== */
+
+  .field {
+    @apply mb-4 flex flex-col gap-[6px];
+  }
+
+  .field label {
+    @apply text-base font-bold text-ink;
+  }
+
+  .field input,
+  .field select,
+  .field textarea {
+    @apply min-h-[var(--touch-comfort)] w-full rounded-brand border-2 border-line bg-surface px-[14px] py-[10px] font-ui text-base text-ink;
+  }
+
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    @apply border-focus outline-none;
+  }
+
+  .field-error {
+    @apply rounded-[8px] bg-danger-bg px-[10px] py-[6px] text-aux font-bold text-danger-fg;
+  }
+
+  .field-help {
+    @apply text-aux text-ink-soft;
+  }
+
+  .field--compact {
+    @apply mb-0;
+  }
+
+  .field--wide {
+    @apply max-w-[420px];
+  }
+
+  .checkbox-label {
+    @apply inline-flex min-h-[var(--touch-min)] cursor-pointer items-center gap-3 font-bold;
+  }
+
+  .checkbox--lg {
+    @apply h-6 w-6;
+  }
+
+  .checkbox--xl {
+    @apply h-7 w-7;
+  }
+
+  .checkbox-hidden {
+    @apply absolute opacity-0;
+  }
+
+  .checkbox-field {
+    @apply flex min-h-[var(--touch-large)] cursor-pointer items-center gap-3 rounded-brand bg-brand-beige p-4 font-bold;
+  }
+
+  .fieldset {
+    @apply rounded-brand border border-line p-4;
+  }
+
+  .fieldset legend {
+    @apply px-2 font-extrabold;
+  }
+
+  .fieldset-clean {
+    @apply m-0 border-none p-0;
+  }
+
+  .fieldset-legend {
+    @apply p-0 text-important font-extrabold;
+  }
+
+  .field-option {
+    @apply flex min-h-[var(--touch-min)] cursor-pointer items-center gap-3 text-base font-bold;
+  }
+
+  .field-option-label {
+    @apply flex min-h-[var(--touch-min)] cursor-pointer items-center gap-3 text-base font-bold;
+  }
+
+  .field-option input[type="checkbox"],
+  .fieldset .checkbox {
+    @apply h-6 w-6;
+  }
+
+  .unit-suffix {
+    @apply self-end pb-4 font-extrabold text-ink-soft;
+  }
+
+  .category-bar {
+    @apply mb-5 flex flex-wrap gap-[10px];
+  }
+
+  /* ===== Tarjetas: borde 1px + fondo, sin sombra fuerte (6.4) ===== */
+
+  .card {
+    @apply rounded-brand border border-line bg-surface p-5;
+  }
+
+  .card-title {
+    @apply mb-3 text-h3;
+  }
+
+  .card-tile {
+    @apply flex flex-col gap-2;
+  }
+
+  .card-link {
+    all: unset;
+    @apply block w-full cursor-pointer;
+  }
+
+  /* ===== KPIs ===== */
+
+  .kpi-value {
+    @apply text-kpi font-extrabold text-ink;
+  }
+
+  .kpi-label {
+    @apply text-important font-bold text-ink-soft;
+  }
+
+  .kpi-card {
+    @apply rounded-brand border border-line bg-brand-beige p-5;
+  }
+
+  .kpi-card--white {
+    @apply border-line bg-surface;
+  }
+
+  .kpi-card--green {
+    @apply bg-success-bg;
+  }
+
+  .kpi-card--beige {
+    @apply bg-brand-beige;
+  }
+
+  .data-row {
+    @apply flex items-center justify-between text-important font-bold;
+  }
+
+  /* ===== Badges de estado: SIEMPRE texto + color (nunca solo color) ===== */
+
+  .badge {
+    @apply inline-flex items-center gap-[6px] rounded-full px-3 py-1 text-aux font-extrabold tracking-[0.4px];
+  }
+
+  .badge-ok {
+    @apply bg-success-bg text-success-fg;
+  }
+
+  .badge-warn {
+    @apply bg-warning-bg text-warning-fg;
+  }
+
+  .badge-danger {
+    @apply bg-danger-bg text-danger-fg;
+  }
+
+  .badge-neutral {
+    @apply bg-brand-beige text-ink;
+  }
+
+  /* ===== Listas de stock / alertas (10.1) ===== */
+
+  .stock-list {
+    @apply grid gap-3;
+  }
+
+  .stock-item {
+    @apply flex items-center justify-between border-b border-line py-2 text-base last:border-b-0;
+  }
+
+  .stock-name {
+    @apply text-base font-bold;
+  }
+
+  .alerts-list {
+    @apply grid gap-4;
+  }
+
+  .alert-item {
+    @apply flex items-start justify-between gap-3 rounded-brand border border-line bg-brand-bone px-4 py-3 text-base;
+  }
+
+  .alert-item strong {
+    @apply text-important;
+  }
+
+  /* ===== Listas limpias ===== */
+
+  .clean-list {
+    @apply m-0 list-none p-0;
+  }
+
+  .clean-list--spaced {
+    @apply m-0 mt-3 list-none p-0;
+  }
+
+  .list-divider {
+    @apply border-b border-line py-3 last:border-b-0;
+  }
+
+  .cart-lines {
+    @apply mt-4 grid list-none gap-4 p-0;
+  }
+
+  /* ===== Tablas táctiles ===== */
+
+  .table {
+    @apply w-full border-collapse text-base;
+  }
+
+  .table th {
+    @apply whitespace-nowrap border-b-2 border-line px-[14px] py-3 text-left font-extrabold text-ink-soft;
+  }
+
+  .table td {
+    @apply border-b border-line p-[14px];
+  }
+
+  .table tbody tr:nth-child(even) {
+    background: #FBF9F1;
+  }
+
+  .td-bold {
+    @apply font-bold;
+  }
+
+  .table-scroll {
+    @apply overflow-x-auto;
+  }
+
+  /* ===== Utilidades semánticas propias ===== */
+
+  .text-secondary {
+    @apply text-ink-soft;
+  }
+
+  .text-important {
+    @apply font-bold text-ink;
+  }
+
+  .text-important-bold {
+    @apply text-important font-extrabold text-ink;
+  }
+
+  .row {
+    @apply flex items-center gap-3;
+  }
+
+  .row-between {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  .stack {
+    @apply flex flex-col gap-3;
+  }
+
+  .stack-sm {
+    @apply flex flex-col gap-[6px];
+  }
+
+  .stack-center {
+    @apply flex flex-col items-center gap-3 text-center;
+  }
+
+  /* ===== Header fijo, una sola fila, logo siempre visible (9) ===== */
+
+  .tia-header {
+    @apply sticky top-0 z-50 flex h-[var(--header-height)] items-center border-b border-line bg-surface px-4 tablet:px-5;
+  }
+
+  /* Acento de marca sutil: línea inferior con la paleta Tía Julia */
+  .tia-header::after {
+    content: "";
+    @apply pointer-events-none absolute inset-x-0 bottom-0 h-[3px];
+    background: linear-gradient(90deg, var(--brand-red), var(--brand-orange), var(--brand-green));
+  }
+
+  .header-inner {
+    @apply relative z-[1] flex w-full items-center gap-3 tablet:gap-4;
+  }
+
+  .nav-brand {
+    @apply flex shrink-0 items-center no-underline;
+  }
+
+  .header-logo {
+    @apply h-10 w-auto tablet:h-11;
+  }
+
+  .desktop-nav {
+    @apply hidden min-w-0 flex-1 items-center gap-1 nav:flex;
+  }
+
+  .nav-item {
+    @apply relative flex min-h-[44px] shrink-0 cursor-pointer items-center whitespace-nowrap rounded-brand border-2 border-transparent px-2.5 py-2 text-button font-bold text-ink-soft no-underline transition-colors duration-150 desktop:px-4;
+  }
+
+  .nav-item:hover {
+    @apply bg-brand-bone text-brand-red-dark;
+  }
+
+  .nav-item:active {
+    @apply scale-[0.98];
+  }
+
+  /* Registrar venta: mayor presencia visual por frecuencia de uso (9) */
+  .nav-item--primary {
+    @apply font-extrabold text-brand-red;
+  }
+
+  /* Activo: color + forma (fondo), nunca solo color (9) */
+  .nav-item-active {
+    @apply bg-brand-red text-white;
+  }
+
+  .nav-item-active:hover {
+    @apply bg-brand-red-dark text-white;
+  }
+
+  .header-tools {
+    @apply ml-auto flex shrink-0 items-center gap-2;
+  }
+
+  .sync-indicator {
+    @apply flex cursor-pointer items-center gap-[6px] whitespace-nowrap rounded-full border border-transparent bg-brand-bone px-3 py-[6px] text-aux font-bold text-ink-soft;
+  }
+
+  .sync-indicator:hover {
+    @apply border-line;
+  }
+
+  .sync-indicator--online {
+    @apply bg-success-bg text-success-fg;
+  }
+
+  .sync-indicator--warning {
+    @apply bg-warning-bg text-warning-fg;
+  }
+
+  .sync-indicator--offline {
+    @apply bg-danger-bg text-danger-fg;
+  }
+
+  .user-picker {
+    @apply flex min-h-[var(--touch-min)] cursor-pointer items-center gap-2 rounded-full border-2 border-line bg-surface px-3 font-bold text-ink transition-colors duration-150;
+  }
+
+  .user-picker:hover {
+    @apply border-ink-soft bg-brand-bone;
+  }
+
+  .user-picker__icon {
+    @apply text-brand-red;
+  }
+
+  .user-picker__name {
+    @apply max-w-[120px] truncate;
+  }
+
+  /* ===== Contenido principal ===== */
+
+  .main-content {
+    @apply mx-auto w-full max-w-[1440px] px-4 py-5 pb-24 tablet:px-6 nav:pb-6;
+  }
+
+  /* ===== Grillas de sección ===== */
+
+  .dashboard-section {
+    @apply flex flex-col gap-3;
+  }
+
+  .dashboard-grid {
+    @apply grid grid-cols-1 gap-5 tablet:grid-cols-3 desktop:gap-6;
+  }
+
+  .dashboard-bottom {
+    @apply grid grid-cols-1 gap-5 tablet:grid-cols-2;
+  }
+
+  .orders-grid {
+    @apply grid grid-cols-1 gap-4 tablet:grid-cols-2;
+  }
+
+  .products-tiles {
+    @apply grid grid-cols-2 gap-4 tablet:grid-cols-3;
+  }
+
+  .sales-layout {
+    @apply grid grid-cols-1 items-start gap-5 tablet:grid-cols-[63%_1fr] desktop:grid-cols-[68%_1fr];
+  }
+
+  .order-summary {
+    @apply sticky top-[92px] self-start;
+  }
+
+  .filter-bar {
+    @apply flex flex-wrap items-end gap-6;
+  }
+
+  .flex-wrap-gap {
+    @apply flex flex-wrap items-center gap-4;
+  }
+
+  .period-row {
+    @apply flex flex-wrap items-end gap-3;
+  }
+
+  /* ===== Modal: overlay, panel, header (37 accesibilidad) ===== */
+
+  .modal-overlay {
+    @apply fixed inset-0 z-[100] flex items-center justify-center p-4;
+    background: rgba(27, 27, 27, 0.5);
+  }
+
+  .modal-panel {
+    @apply flex max-h-[92vh] w-full max-w-[600px] flex-col overflow-hidden rounded-panel bg-surface shadow-modal tablet:max-w-[680px];
+  }
+
+  .modal-panel--wide {
+    @apply tablet:max-w-[960px];
+  }
+
+  .modal-header {
+    @apply flex items-start justify-between gap-3 border-b border-line px-6 pb-4 pt-5;
+    background: linear-gradient(180deg, rgba(242, 212, 162, 0.35) 0%, rgba(255, 255, 255, 0) 100%);
+  }
+
+  .modal-header h2 {
+    @apply text-h2;
+  }
+
+  .modal-close {
+    @apply min-h-[var(--touch-min)] min-w-[var(--touch-min)] shrink-0 p-0;
+  }
+
+  .modal-body {
+    @apply overflow-y-auto px-6 py-5;
+  }
+
+  .modal-actions {
+    @apply mt-5 flex flex-wrap justify-end gap-3 border-t border-line pt-4;
+  }
+
+  .modal-footer {
+    @apply flex flex-wrap justify-end gap-3 border-t border-line bg-brand-bone/60 px-6 py-4;
+  }
+
+  /* ===== Control segmentado (7.x): activo con borde + fondo ===== */
+
+  .segmented-control {
+    @apply flex flex-wrap gap-3;
+  }
+
+  .segmented-control--large > button {
+    @apply min-h-[var(--touch-large)];
+  }
+
+  /* ===== Tabs de reportes (19.2) ===== */
+
+  .report-tabs {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .report-tab {
+    @apply min-h-[var(--touch-comfort)] shrink-0 cursor-pointer whitespace-nowrap rounded-t-brand border-2 border-b-0 border-transparent bg-transparent px-5 py-[10px] text-button font-bold text-ink-soft transition-colors duration-150;
+  }
+
+  .report-tab[aria-pressed="true"] {
+    @apply border-brand-red text-brand-red;
+    background: var(--brand-bone);
+  }
+
+  /* ===== Ranking horizontal (10.3) ===== */
+
+  .ranking-list {
+    @apply m-0 mt-3 grid list-none gap-1 p-0;
+  }
+
+  /* ===== Gráficos: contenedores de altura fija (10.2, 10.3) ===== */
+  /* chart-canvas aísla el canvas en una caja con overflow:hidden y max-height
+     para evitar el bucle de redimensión infinita de Chart.js. */
+
+  .chart-container {
+    @apply relative w-full;
+    height: var(--chart-height, 320px);
+    max-height: 80vh;
+  }
+
+  .chart-canvas {
+    @apply relative w-full overflow-hidden;
+    height: var(--chart-height, 320px);
+    max-height: 70vh;
+  }
+
+  .chart-canvas canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .chart-value-above-bar {
+    @apply mt-2 flex justify-around font-bold;
+  }
+
+  /* ===== Cantidad: botones táctiles ===== */
+
+  .qty-btn {
+    @apply w-12 p-0;
+  }
+
+  .qty-btn--lg {
+    @apply w-14 p-0 text-2xl;
+  }
+
+  .qty-display {
+    @apply min-w-[28px] text-center font-extrabold;
+  }
+
+  .qty-display--lg {
+    @apply min-w-[40px] text-center text-2xl font-extrabold;
+  }
+
+  .touch-lg {
+    @apply min-h-[var(--touch-large)];
+  }
+
+  /* ===== Resumen fijo del ensamblador ===== */
+
+  .summary-sticky {
+    @apply sticky bottom-0 rounded-brand bg-brand-beige p-4;
+  }
+
+  .summary-line {
+    @apply text-important font-bold;
+  }
+
+  /* ===== Calculadora de vuelto ===== */
+
+  .change-calculator {
+    @apply rounded-brand bg-success-bg px-[18px] py-[14px] text-important font-extrabold text-success-fg;
+  }
+
+  /* ===== Receta / ensamblador producto ↔ insumos ===== */
+
+  .recipe-editor {
+    @apply bg-brand-bone/50;
+  }
+
+  .recipe-tabs {
+    @apply mb-3 flex flex-wrap gap-2;
+  }
+
+  .recipe-tab {
+    @apply min-h-[44px] cursor-pointer whitespace-nowrap rounded-full border-2 border-line bg-surface px-4 text-base font-bold text-ink-soft transition-colors duration-150;
+  }
+
+  .recipe-tab[aria-pressed="true"] {
+    @apply border-brand-red bg-brand-red text-white;
+  }
+
+  .recipe-rows {
+    @apply m-0 grid list-none gap-2 p-0;
+  }
+
+  .recipe-row {
+    @apply flex flex-wrap items-end gap-2 rounded-brand border border-line bg-surface p-2;
+  }
+
+  .recipe-row__ingredient {
+    @apply min-w-[180px] flex-1;
+  }
+
+  .recipe-row__option {
+    @apply min-w-[140px];
+  }
+
+  .recipe-row__qty {
+    @apply w-[110px];
+  }
+
+  .recipe-row__unit {
+    @apply pb-3 text-base font-extrabold text-ink-soft;
+  }
+
+  .recipe-row__remove {
+    @apply min-h-[44px] px-3;
+  }
+
+  .recipe-actions {
+    @apply mt-3 flex flex-wrap items-center gap-3;
+  }
+
+  .recipe-copy {
+    @apply flex cursor-pointer items-center gap-2 rounded-brand border border-line bg-surface px-2 py-1 text-aux font-bold text-ink-soft;
+  }
+
+  .recipe-copy select {
+    @apply min-h-[36px] cursor-pointer border-none bg-transparent text-aux font-bold text-ink;
+  }
+
+  /* ===== Ensamblador de receta por cuadros + contadores ===== */
+
+  .assembler-section {
+    @apply mt-4 flex flex-col gap-2;
+  }
+
+  .assembler-section__title {
+    @apply text-important font-extrabold text-ink;
+  }
+
+  .assembler-block {
+    @apply mt-2 flex flex-col gap-2;
+  }
+
+  .assembler-block__title {
+    @apply text-base font-extrabold text-ink-soft;
+  }
+
+  .assembler-grid {
+    @apply grid grid-cols-1 gap-3 tablet:grid-cols-2;
+  }
+
+  .assembler-tile {
+    @apply flex flex-col gap-2 rounded-brand border-2 border-line bg-surface p-3 text-left;
+  }
+
+  .assembler-tile--active {
+    @apply border-brand-red bg-brand-beige;
+  }
+
+  .assembler-tile--add {
+    @apply cursor-pointer transition-colors duration-150;
+  }
+
+  .assembler-tile--add:hover {
+    @apply border-brand-orange bg-brand-bone;
+  }
+
+  .assembler-tile__head {
+    @apply flex items-center justify-between gap-2;
+  }
+
+  .assembler-tile__name {
+    @apply flex items-center gap-1.5 text-base font-extrabold text-ink;
+  }
+
+  .assembler-tile__meta {
+    @apply text-aux text-ink-soft;
+  }
+
+  .assembler-tile__remove {
+    @apply cursor-pointer rounded-full p-1 text-danger-fg;
+  }
+
+  .assembler-qty {
+    @apply mt-auto flex items-center gap-2;
+  }
+
+  .assembler-qty__btn {
+    @apply min-h-[40px] min-w-[40px] px-0;
+  }
+
+  .assembler-qty input {
+    @apply min-h-[var(--touch-comfort)] w-full rounded-brand border-2 border-line bg-surface px-3 font-ui text-base text-ink;
+  }
+
+  .assembler-qty__unit {
+    @apply shrink-0 text-base font-extrabold text-ink-soft;
+  }
+
+  .assembler-count {
+    @apply min-w-[36px] text-center text-h3 font-extrabold text-ink;
+  }
+
+  /* Layout 65% catálogo / 35% constructor (sección 7.1). */
+  .recipe-editor__split {
+    @apply grid grid-cols-1 items-start gap-4 tablet:grid-cols-[1.85fr_1fr];
+  }
+
+  .recipe-editor__catalog,
+  .recipe-editor__builder {
+    @apply min-w-0;
+  }
+
+  .assembler-qty-block {
+    @apply mt-auto flex flex-col gap-2;
+  }
+
+  .assembler-clear {
+    @apply flex min-h-[40px] cursor-pointer items-center gap-1 rounded-brand border-2 border-line px-2 text-aux font-bold text-ink-soft;
+  }
+
+  .assembler-increments {
+    @apply flex flex-wrap gap-2;
+  }
+
+  .assembler-increment {
+    @apply min-h-[var(--touch-comfort)] flex-1 cursor-pointer whitespace-nowrap rounded-brand border-2 border-brand-orange bg-brand-bone px-3 text-base font-extrabold text-ink transition-colors duration-150;
+  }
+
+  .assembler-increment:hover {
+    @apply bg-brand-orange text-white;
+  }
+
+  /* Reabastecimiento por empaque de compra en el modal de insumo (sección 7.2). */
+  .restock-package {
+    @apply flex min-h-[var(--touch-large)] cursor-pointer items-center justify-between gap-3 rounded-brand border-2 border-brand-green bg-success-bg px-4 text-left text-important font-extrabold text-ink transition-colors duration-150;
+  }
+
+  .restock-package:hover {
+    @apply bg-brand-green text-white;
+  }
+
+  .restock-alert {
+    @apply rounded-brand border-2 border-[#E5C07B] bg-warning-bg px-4 py-3 text-important font-bold text-warning-fg;
+  }
+
+  .assembler-search {
+    @apply mt-3 flex items-center gap-2.5 rounded-brand border-2 border-line bg-surface px-3 py-2;
+  }
+
+  .assembler-search input {
+    @apply w-full border-none bg-transparent text-base outline-none;
+  }
+
+  .assembler-summary {
+    @apply mt-4 rounded-brand border border-line bg-surface p-4;
+  }
+
+  .assembler-summary__list {
+    @apply m-0 mt-2 grid list-none gap-1 p-0;
+  }
+
+  .assembler-summary__list li {
+    @apply flex items-center justify-between gap-3 border-b border-line py-1 text-base last:border-b-0;
+  }
+
+  /* ===== Modal de producto: secciones numeradas y precio sugerido ===== */
+
+  .stack-lg {
+    @apply flex flex-col gap-4;
+  }
+
+  .form-section {
+    @apply rounded-brand border border-line bg-surface p-4;
+  }
+
+  .form-section__head {
+    @apply mb-3 flex items-start gap-3;
+  }
+
+  .form-section__num {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-red text-base font-extrabold text-white;
+  }
+
+  .form-section__title {
+    @apply text-h3;
+  }
+
+  .form-section__hint {
+    @apply text-aux text-ink-soft;
+  }
+
+  .checkbox-field--off {
+    @apply bg-brand-bone;
+  }
+
+  /* Precio: campo + tarjeta de sugerencia lado a lado en tablet. */
+  .price-layout {
+    @apply grid grid-cols-1 items-start gap-4 tablet:grid-cols-[minmax(0,260px)_1fr];
+  }
+
+  .price-input {
+    @apply flex items-stretch gap-0;
+  }
+
+  .price-input__prefix {
+    @apply flex min-h-[var(--touch-comfort)] items-center rounded-l-brand border-2 border-r-0 border-line bg-brand-bone px-3 font-extrabold text-ink-soft;
+  }
+
+  .price-input input {
+    @apply rounded-l-none;
+  }
+
+  .price-suggestion {
+    @apply rounded-brand border-2 border-brand-green bg-success-bg p-4;
+  }
+
+  .price-suggestion--soft {
+    @apply border-[#C9CFC4] bg-brand-bone;
+  }
+
+  .price-suggestion__head {
+    @apply flex flex-wrap items-start justify-between gap-3;
+  }
+
+  .price-suggestion__label {
+    @apply flex items-center gap-1.5 text-important font-extrabold text-ink;
+  }
+
+  .price-suggestion__value {
+    @apply text-kpi font-extrabold text-ink;
+  }
+
+  .price-suggestion__meta {
+    @apply text-aux text-ink-soft;
+  }
+
+  .price-suggestion__margin {
+    @apply mt-3 flex items-center gap-1.5 rounded-brand bg-surface/70 px-3 py-2 text-important font-bold text-ink;
+  }
+
+  .price-suggestion__warn {
+    @apply mt-3 flex items-start gap-1.5 rounded-brand bg-warning-bg px-3 py-2 text-aux font-bold text-warning-fg;
+  }
+
+  .price-suggestion__compare {
+    @apply mt-3 text-aux font-bold text-ink;
+  }
+
+  .margin-chips {
+    @apply mt-3 flex flex-wrap gap-2;
+  }
+
+  .margin-chip {
+    @apply flex min-h-[var(--touch-comfort)] flex-1 cursor-pointer flex-col items-center justify-center rounded-brand border-2 border-line bg-surface px-3 py-1 leading-tight transition-colors duration-150;
+  }
+
+  .margin-chip:hover {
+    @apply border-brand-orange bg-brand-bone;
+  }
+
+  .margin-chip[aria-pressed="true"] {
+    @apply border-brand-red bg-brand-red text-white;
+  }
+
+  .margin-chip__value {
+    @apply text-important font-extrabold;
+  }
+
+  .margin-chip__hint {
+    @apply text-aux;
+  }
+
+  .price-breakdown {
+    @apply mt-3 rounded-brand border border-line bg-surface px-3 py-2;
+  }
+
+  .price-breakdown summary {
+    @apply cursor-pointer text-important font-bold text-ink;
+  }
+
+  .price-breakdown__list {
+    @apply m-0 mt-2 grid list-none gap-1 p-0;
+  }
+
+  .price-breakdown__list li {
+    @apply flex items-center justify-between gap-3 border-b border-line py-1 text-base last:border-b-0;
+  }
+
+  .option-group-picker {
+    @apply grid grid-cols-1 gap-2 tablet:grid-cols-2;
+  }
+
+  .option-chip {
+    @apply flex min-h-[var(--touch-min)] cursor-pointer flex-col justify-center rounded-brand border-2 border-line bg-surface px-3 py-2 transition-colors duration-150;
+  }
+
+  .option-chip:hover {
+    @apply border-brand-orange bg-brand-bone;
+  }
+
+  .option-chip--on {
+    @apply border-brand-red bg-brand-beige;
+  }
+
+  .option-chip--locked {
+    @apply cursor-not-allowed opacity-70;
+  }
+
+  .option-chip__name {
+    @apply flex items-center gap-1.5 text-base font-extrabold text-ink;
+  }
+
+  .option-chip__meta {
+    @apply text-aux text-ink-soft;
+  }
+
+  .modal-footer__summary {
+    @apply mr-auto flex items-center text-important font-bold text-ink-soft;
+  }
+
+  /* ===== Cajas de medios de pago (Efectivo verde, Yape morado) ===== */
+
+  .payment-box {
+    @apply flex items-center justify-between gap-3 rounded-brand border-2 px-4 py-3;
+  }
+
+  .payment-box__label {
+    @apply flex items-center gap-2 text-important font-bold;
+  }
+
+  .payment-box__value {
+    @apply text-important font-extrabold;
+  }
+
+  .payment-box__icon {
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white;
+  }
+
+  .payment-box__icon--cash {
+    @apply bg-cash;
+  }
+
+  .payment-box__icon--yape {
+    @apply bg-yape;
+  }
+
+  .payment-box--cash {
+    @apply border-[#BFD9C0] bg-[#E7F3E3] text-[#1F5A21];
+  }
+
+  .payment-box--yape {
+    @apply border-[#D6C7F0] bg-[#F1EAFC] text-[#5B21B6];
+  }
+
+  /* ===== Detalle del día: métricas del modal ===== */
+
+  .detail-grid {
+    @apply grid grid-cols-1 gap-3 tablet:grid-cols-2;
+  }
+
+  .detail-tile {
+    @apply rounded-brand border border-line bg-surface px-4 py-3;
+  }
+
+  .detail-tile__label {
+    @apply text-base font-bold text-ink-soft;
+  }
+
+  .detail-tile__value {
+    @apply text-h3 font-extrabold text-ink;
+  }
+
+  .modal-section-title {
+    @apply mt-5 mb-2 text-important font-extrabold text-ink;
+  }
+
+  /* ===== Predicciones: barra de confianza legible ===== */
+
+  .confidence {
+    @apply flex items-center gap-3;
+  }
+
+  .confidence__track {
+    @apply h-3 w-full max-w-[220px] overflow-hidden rounded-full bg-line;
+  }
+
+  .confidence__fill {
+    @apply h-full rounded-full bg-brand-green;
+  }
+
+  .confidence__fill--low {
+    @apply bg-brand-orange;
+  }
+
+  /* ===== Anomalías ===== */
+
+  .anomaly-list {
+    @apply grid gap-4;
+  }
+
+  .anomaly-item {
+    @apply rounded-brand border border-line p-3;
+  }
+
+  .anomaly-item--drop {
+    @apply bg-danger-bg;
+  }
+
+  .anomaly-item--spike {
+    @apply bg-warning-bg;
+  }
+
+  /* ===== Estados de carga / vacío ===== */
+
+  .empty-state {
+    @apply px-6 py-10 text-center;
+  }
+
+  .loading-message {
+    @apply inline-flex items-center justify-center gap-3 p-8 text-center font-bold text-ink-soft;
+  }
+
+  .loading-text {
+    @apply align-middle;
+  }
+
+  .spinner {
+    @apply inline-block h-8 w-8 rounded-full border-[3px] border-line;
+    border-top-color: var(--brand-red);
+    animation: spin 0.8s linear infinite;
+  }
+
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+
+  /* ===== Toasts / banners ===== */
+
+  .live-toast {
+    @apply fixed bottom-[90px] left-1/2 z-[200] -translate-x-1/2 rounded-brand bg-ink px-[22px] py-3 text-base font-bold text-white shadow-modal;
+  }
+
+  .offline-banner {
+    @apply bg-warning-bg px-6 py-[10px] text-center text-base font-bold text-warning-fg;
+  }
+
+  .attention-toast {
+    @apply fixed bottom-3 left-3 z-[90] flex items-center gap-3 rounded-brand bg-danger-bg px-4 py-3 font-bold text-danger-fg;
+  }
+
+  .error-screen {
+    @apply mx-auto mt-16 max-w-[560px] p-6;
+  }
+
+  /* ===== Barra inferior móvil (8.4) ===== */
+
+  .mobile-bottom-bar {
+    @apply hidden;
+  }
+
+  @media (max-width: 999px) {
+    .mobile-bottom-bar {
+      @apply flex fixed inset-x-0 bottom-0 z-40 h-[72px] border-t border-line bg-surface shadow-bar;
+    }
+
+    .mobile-bottom-bar a {
+      @apply flex min-h-16 flex-1 flex-col items-center justify-center gap-[2px] px-1 py-2 text-[14px] font-bold no-underline text-ink-soft transition-all duration-150;
+    }
+
+    .mobile-bottom-bar a:hover {
+      @apply bg-brand-bone text-brand-red-dark;
+    }
+
+    .mobile-bottom-bar a.active {
+      @apply border-t-[3px] border-brand-red bg-brand-beige text-brand-red;
+    }
+
+    .mobile-bottom-bar a.active svg {
+      @apply rounded-full bg-brand-red p-[6px] text-white;
+    }
+
+    .modal-actions .btn-primary {
+      @apply w-full;
+    }
+  }
+}
+
+/* ------------------------------------------------------------
+   Animaciones
+   ------------------------------------------------------------ */
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}

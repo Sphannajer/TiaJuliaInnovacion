@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <circle cx="32" cy="34" r="24" fill="#E99015"/>
+  <circle cx="32" cy="34" r="19" fill="#F2D4A2"/>
+  <path d="M32 15 L32 34 M32 34 L14 26 M32 34 L50 26 M32 34 L20 48 M32 34 L44 48" stroke="#E99015" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 12 Q 38 4 46 8 Q 40 14 32 12 Z" fill="#4F9C3A"/>
+  <text x="32" y="58" font-family="sans-serif" font-size="9" font-weight="bold" text-anchor="middle" fill="#C92429">TÍA JULIA</text>
+</svg>

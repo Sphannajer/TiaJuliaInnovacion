@@ -1,0 +1,69 @@
+/* ============================================================
+   TÍA JULIA — Design tokens (sección 6)
+   Única fuente de verdad de color, espaciado, radios, sombras de layout
+   y variables de composición.
+
+   Tipografía, tamaños de texto, sombras de UI y breakpoints viven en
+   `globals.css` dentro del bloque `@theme` de Tailwind (se exponen como
+   utilidades: text-h1, font-ui, shadow-modal, etc.). No duplicar aquí.
+   ============================================================ */
+
+:root {
+  /* 6.1 Colores de marca */
+  --brand-red: #C92429;
+  --brand-red-dark: #A61D22;
+  --brand-orange: #E99015;
+  --brand-orange-dark: #B96F0E;
+  --brand-green: #4F9C3A;
+  --brand-beige: #F2D4A2;
+  /* Identidad de medios de pago: Efectivo (verde) y Yape (morado) */
+  --cash-green: #2E7D32;
+  --yape-purple: #6D28D9;
+  --brand-bone: #F6F3E6;
+
+  /* Neutros accesibles */
+  --text-main: #1B1B1B;
+  --text-secondary: #3D3D3D;
+  --surface: #FFFFFF;
+  --border: #D7D2C8;
+  --focus: #1B5EAA;
+  --chart-grid: #EEE9DC;
+  --danger-bg: #FCE8E8;
+  --danger-text: #8E1B1F;
+  --warning-bg: #FFF1D6;
+  --warning-text: #7A4E06;
+  --success-bg: #E7F3E3;
+  --success-text: #2E5E23;
+
+  /* 6.3 Interlineados — consumidos por el @theme de Tailwind (globals.css) */
+  --lh-h1: 38px;
+  --lh-h2: 32px;
+  --lh-h3: 28px;
+  --lh-base: 27px;
+  --lh-important: 28px;
+  --lh-aux: 22px;
+
+  /* 6.4 Radios — nada de radios gigantes ni glassmorphism */
+  --radius: 10px;
+  --radius-modal: 14px;
+
+  /* Espaciado */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Táctiles: mínimos obligatorios (sección 7) */
+  --touch-min: 48px;
+  --touch-comfort: 52px;
+  --touch-large: 56px;
+
+  /* Header */
+  --header-height: 76px;
+
+  /* Formas orgánicas (6.5): curva del header */
+  --header-curve: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='24' viewBox='0 0 120 24'%3E%3Cpath d='M0 24 Q 60 0 120 24 Z' fill='%23F2D4A2'/%3E%3C/svg%3E");
+}
