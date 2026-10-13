@@ -8,6 +8,7 @@ frontend/dist/
 *.pyc
 __pycache__/
 .pytest_cache/
+.codebase-memory/
 
 # Entorno
 .env
