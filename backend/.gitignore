@@ -8,3 +8,4 @@ models/*.joblib
 models/*.pkl
 generated_reports/*.pdf
 generated_reports/*.png
+*.egg-info
