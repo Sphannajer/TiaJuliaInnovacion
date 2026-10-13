@@ -4,8 +4,11 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
-models/*.joblib
-models/*.pkl
+models/
 generated_reports/*.pdf
 generated_reports/*.png
 *.egg-info
+
+# Sistema
+.DS_Store
+*.log
