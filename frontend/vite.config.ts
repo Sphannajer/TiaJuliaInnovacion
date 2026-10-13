@@ -13,7 +13,8 @@ export default defineConfig({
       manifest: {
         name: "Tía Julia — Ventas y Órdenes",
         short_name: "Tía Julia",
-        description: "Sistema de ventas, órdenes, inventario y analítica para la juguería Tía Julia",
+        description:
+          "Sistema de ventas, órdenes, inventario y analítica para la juguería Tía Julia",
         theme_color: "#C92429",
         background_color: "#F6F3E6",
         display: "standalone",
@@ -33,10 +34,13 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Catalog pages benefit from a small runtime cache; sales flow is queued in IndexedDB.
         runtimeCaching: [
           {
-            urlPattern: ({ url }) => url.pathname.startsWith("/api/v1/products") || url.pathname.startsWith("/api/v1/categories") || url.pathname.startsWith("/api/v1/option-groups") || url.pathname.startsWith("/api/v1/users"),
+            urlPattern: ({ url }) =>
+              url.pathname.startsWith("/api/v1/products") ||
+              url.pathname.startsWith("/api/v1/categories") ||
+              url.pathname.startsWith("/api/v1/option-groups") ||
+              url.pathname.startsWith("/api/v1/users"),
             handler: "NetworkFirst",
             options: {
               cacheName: "catalog-cache",

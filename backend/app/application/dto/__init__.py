@@ -249,6 +249,10 @@ class OrderDetailAdd(BaseModel):
     notes: str | None = Field(default=None, max_length=255)
 
 
+class OrderDetailsAdd(BaseModel):
+    items: list[OrderDetailAdd] = Field(min_length=1)
+
+
 class OrderDetailUpdate(BaseModel):
     quantity: int | None = Field(default=None, ge=1, le=99)
     option_ids: list[int] | None = None

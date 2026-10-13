@@ -229,6 +229,7 @@
 .recipe-remove-button,
 .recipe-remove-ingredient {
   display: inline-flex;
+  flex-direction: row;
   align-items: center;
   justify-self: start;
   gap: 6px;
@@ -240,6 +241,16 @@
   color: var(--text-secondary);
   font-weight: 700;
   font-size: 16px;
+  white-space: nowrap;
+}
+
+.recipe-remove-ingredient svg {
+  flex: 0 0 auto;
+}
+
+.recipe-view-tab--active strong {
+  background: var(--surface);
+  color: var(--text-main);
 }
 
 .recipe-remove-button:disabled {
@@ -314,6 +325,306 @@
 
 .recipe-remove-ingredient {
   margin-top: 2px;
+}
+
+/* Tarjetas táctiles del bloque “Siempre lleva”. */
+.recipe-ingredient-list--always {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+
+.recipe-ingredient-list--choices {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+}
+
+.recipe-ingredient-row--always {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  border-width: 1px;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgb(45 35 25 / 5%);
+}
+
+.recipe-ingredient-row--choice {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  border-width: 1px;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgb(45 35 25 / 5%);
+}
+
+.recipe-ingredient-row--choice .recipe-ingredient-row__head {
+  align-items: center;
+  margin: 0;
+}
+
+.recipe-ingredient-row--choice .recipe-ingredient-row__name {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.recipe-ingredient-row--choice .recipe-ingredient-row__linked {
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.recipe-ingredient-row--always .recipe-ingredient-row__head {
+  align-items: center;
+  margin: 0;
+}
+
+.recipe-ingredient-row--always .recipe-ingredient-row__name {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.recipe-ingredient-row--always .recipe-remove-ingredient {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.recipe-ingredient-row--always .recipe-remove-ingredient:hover,
+.recipe-ingredient-row--always .recipe-remove-ingredient:focus-visible {
+  border-color: var(--border);
+  border-radius: 8px;
+  background: var(--brand-bone);
+  color: var(--brand-red);
+}
+
+.recipe-ingredient-row--always .assembler-qty-block,
+.recipe-ingredient-row--choice .assembler-qty-block {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.recipe-ingredient-row--always .assembler-qty__label,
+.recipe-ingredient-row--always .assembler-increments__label,
+.recipe-ingredient-row--choice .assembler-qty__label,
+.recipe-ingredient-row--choice .assembler-increments__label {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.recipe-ingredient-row--always .assembler-qty,
+.recipe-ingredient-row--choice .assembler-qty {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 46px;
+  gap: 0;
+  min-height: 46px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.recipe-ingredient-row--always .assembler-qty__btn,
+.recipe-ingredient-row--choice .assembler-qty__btn {
+  min-width: 46px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 0;
+  background: var(--brand-bone);
+}
+
+.recipe-ingredient-row--always .assembler-qty__btn:hover:not(:disabled),
+.recipe-ingredient-row--choice .assembler-qty__btn:hover:not(:disabled) {
+  background: var(--brand-beige);
+  color: var(--brand-red);
+}
+
+.recipe-ingredient-row--always .assembler-qty__natural,
+.recipe-ingredient-row--choice .assembler-qty__natural {
+  min-height: 44px;
+  gap: 6px;
+  border: 0;
+  border-radius: 0;
+  padding: 0 8px;
+  background: var(--surface);
+}
+
+.recipe-ingredient-row--always .assembler-qty__natural input,
+.recipe-ingredient-row--always .assembler-qty > .assembler-qty__natural input,
+.recipe-ingredient-row--choice .assembler-qty__natural input,
+.recipe-ingredient-row--choice .assembler-qty > .assembler-qty__natural input {
+  min-height: 40px;
+  border: 0;
+  border-radius: 0;
+  outline: 0;
+  box-shadow: none;
+  padding: 0;
+  font-size: 20px;
+}
+
+.recipe-ingredient-row--always .assembler-qty__natural input:focus,
+.recipe-ingredient-row--always .assembler-qty > .assembler-qty__natural input:focus,
+.recipe-ingredient-row--choice .assembler-qty__natural input:focus,
+.recipe-ingredient-row--choice .assembler-qty > .assembler-qty__natural input:focus {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+}
+
+.recipe-ingredient-row--always .assembler-qty__natural:focus-within,
+.recipe-ingredient-row--choice .assembler-qty__natural:focus-within {
+  background: var(--brand-bone);
+}
+
+.recipe-ingredient-row--always .assembler-qty__unit,
+.recipe-ingredient-row--choice .assembler-qty__unit {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.recipe-ingredient-row--always .assembler-increments,
+.recipe-ingredient-row--choice .assembler-increments {
+  gap: 8px;
+}
+
+.recipe-ingredient-row--always .assembler-increment,
+.recipe-ingredient-row--choice .assembler-increment {
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 0 11px;
+  background: var(--surface);
+  font-size: 14px;
+}
+
+.recipe-ingredient-row--always .assembler-increment:hover,
+.recipe-ingredient-row--always .assembler-increment:focus-visible,
+.recipe-ingredient-row--choice .assembler-increment:hover,
+.recipe-ingredient-row--choice .assembler-increment:focus-visible {
+  border-color: var(--border);
+  background: var(--brand-bone);
+  color: var(--text-main);
+}
+
+.recipe-ingredient-row--always .assembler-clear {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  min-height: 36px;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.recipe-ingredient-row--choice .assembler-clear {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  min-height: 36px;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.recipe-ingredient-row--always .assembler-clear:hover:not(:disabled),
+.recipe-ingredient-row--always .assembler-clear:focus-visible:not(:disabled) {
+  border-color: var(--border);
+  background: var(--brand-bone);
+  color: var(--brand-red);
+}
+
+.recipe-ingredient-row--choice .assembler-clear:hover:not(:disabled),
+.recipe-ingredient-row--choice .assembler-clear:focus-visible:not(:disabled) {
+  border-color: var(--border);
+  background: var(--brand-bone);
+  color: var(--brand-red);
+}
+
+.recipe-ingredient-row--choice .recipe-quantity__natural {
+  margin: 0;
+  font-size: 13px;
+}
+
+.recipe-search {
+  min-height: 48px;
+  border-width: 1px;
+  padding-inline: 12px;
+}
+
+.recipe-search input {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.recipe-search-results {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 8px;
+}
+
+.recipe-search-result {
+  min-height: 46px;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.recipe-search-result:hover,
+.recipe-search-result:focus-visible {
+  border-color: var(--border);
+  background: var(--brand-bone);
+}
+
+.recipe-search-result > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 420px) {
+  .recipe-ingredient-row--always {
+    padding: 14px;
+  }
+
+  .recipe-ingredient-row--always .assembler-qty {
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+  }
+
+  .recipe-ingredient-row--always .assembler-qty__btn {
+    min-width: 42px;
+  }
 }
 
 @media (max-width: 767px) {

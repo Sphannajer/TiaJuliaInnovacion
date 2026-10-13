@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api, uuid } from "../../lib/api";
+import { api, ApiError } from "../../lib/api";
 import { SegmentedControl } from "../../components/ui/SegmentedControl";
 import { Modal } from "../../components/ui/Modal";
 import { PaymentModal } from "../sales/PaymentModal";
+import { ProductAssemblerModal, type AssemblerResult } from "../sales/ProductAssemblerModal";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { LoadingMessage } from "../../components/feedback/LoadingMessage";
 import { formatMoney } from "../../lib/currency";
@@ -57,6 +58,14 @@ export function OrdersPage() {
       void queryClient.invalidateQueries({ queryKey: ["orders-counts"] });
       setTimeout(() => setMessage(null), 2500);
     },
+    onError: (error) => {
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({ queryKey: ["orders-counts"] });
+      setMessage(error instanceof ApiError && error.code === "INVALID_ORDER_STATE"
+        ? "La orden fue actualizada."
+        : "No se pudo cancelar la orden. Intenta nuevamente.");
+      setTimeout(() => setMessage(null), 3000);
+    },
   });
 
   const orders = ordersQuery.data?.items ?? [];
@@ -64,6 +73,11 @@ export function OrdersPage() {
   return (
     <div>
       <h1>Órdenes del día</h1>
+      {message && (
+        <p className="badge badge-ok mt-4" role="status">
+          {message}
+        </p>
+      )}
 
       {/* Tabs con contadores (14.1) */}
       <div className="row mt-4 gap-2.5 flex-wrap">
@@ -133,14 +147,22 @@ export function OrdersPage() {
         <PaymentModal
           total={parseFloat(payTarget.total_amount)}
           onConfirm={async (methodId) => {
-            const order = await api.post<Order>(`/orders/${payTarget.id}/pay`, { payment_method_id: methodId });
-            setPayTarget(null);
-            setMessage("Pago registrado correctamente.");
-            void queryClient.invalidateQueries({ queryKey: ["orders"] });
-            void queryClient.invalidateQueries({ queryKey: ["orders-counts"] });
-            void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-            setTimeout(() => setMessage(null), 2500);
-            return order;
+            try {
+              const order = await api.post<Order>(`/orders/${payTarget.id}/pay`, { payment_method_id: methodId });
+              setMessage("Pago registrado correctamente.");
+              void queryClient.invalidateQueries({ queryKey: ["orders"] });
+              void queryClient.invalidateQueries({ queryKey: ["orders-counts"] });
+              void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+              setTimeout(() => setMessage(null), 2500);
+              return order;
+            } catch (error) {
+              void queryClient.invalidateQueries({ queryKey: ["orders"] });
+              void queryClient.invalidateQueries({ queryKey: ["orders-counts"] });
+              if (error instanceof ApiError && error.code === "INVALID_ORDER_STATE") {
+                setMessage("La orden fue actualizada.");
+              }
+              throw error;
+            }
           }}
           onClose={() => setPayTarget(null)}
         />
@@ -284,11 +306,14 @@ function OrderSummary({ order }: { order: Order }) {
 /** Modal 15 — Agregar productos a una orden existente. */
 function AddProductsModal({ order, onClose }: { order: Order; onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [lines, setLines] = useState<{ product: Product; quantity: number; option_ids: number[] }[]>([]);
+  const [lines, setLines] = useState<
+    { product: Product; quantity: number; option_ids: number[]; unit_price: number }[]
+  >([]);
   const [category, setCategory] = useState<number | null>(null);
   const [assembling, setAssembling] = useState<Product | null>(null);
   const [groups, setGroups] = useState<OptionGroup[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const categories = useQuery({ queryKey: ["categories"], queryFn: () => api.get<Category[]>("/categories") });
@@ -297,20 +322,11 @@ function AddProductsModal({ order, onClose }: { order: Order; onClose: () => voi
     queryFn: () => api.get<Product[]>(`/products?active=true${category ? `&category_id=${category}` : ""}`),
   });
 
-  const estimatedTotal = useMemo(
-    () =>
-      lines.reduce(
-        (sum, line) =>
-          sum + parseFloat(line.product.base_price) * line.quantity + line.option_ids.reduce(() => 0, 0),
-        0,
-      ),
-    [lines],
-  );
-  void estimatedTotal;
+  const estimatedTotal = useMemo(() => lines.reduce((sum, line) => sum + line.unit_price * line.quantity, 0), [lines]);
 
   const openAssembler = async (product: Product) => {
     if (!product.has_options) {
-      setLines((prev) => [...prev, { product, quantity: 1, option_ids: [] }]);
+      setLines((prev) => [...prev, { product, quantity: 1, option_ids: [], unit_price: parseFloat(product.base_price) }]);
       setMessage(`${product.name} agregada.`);
       setTimeout(() => setMessage(null), 1800);
       return;
@@ -323,17 +339,23 @@ function AddProductsModal({ order, onClose }: { order: Order; onClose: () => voi
   const submit = async () => {
     if (lines.length === 0) return;
     setSaving(true);
+    setError(null);
     try {
-      for (const line of lines) {
-        await api.post(`/orders/${order.id}/details`, {
+      await api.post(`/orders/${order.id}/details/batch`, {
+        items: lines.map((line) => ({
           product_id: line.product.id,
           quantity: line.quantity,
           option_ids: line.option_ids,
-        });
-      }
+        })),
+      });
       setMessage("Productos agregados a la orden.");
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
       setTimeout(() => onClose(), 800);
+    } catch (requestError) {
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      setError(requestError instanceof ApiError && requestError.code === "INVALID_ORDER_STATE"
+        ? "La orden fue actualizada."
+        : "No se pudieron agregar los productos. Intenta nuevamente.");
     } finally {
       setSaving(false);
     }
@@ -367,6 +389,26 @@ function AddProductsModal({ order, onClose }: { order: Order; onClose: () => voi
         ))}
       </div>
 
+      {lines.length > 0 && (
+        <div className="card mt-4">
+          <h3 className="text-important">Nuevos productos</h3>
+          <ul className="clean-list mt-2">
+            {lines.map((line, index) => (
+              <li key={`${line.product.id}-${index}`} className="row-between list-divider">
+                <span>{line.product.name} x{line.quantity}</span>
+                <strong>{formatMoney(line.unit_price * line.quantity)}</strong>
+              </li>
+            ))}
+          </ul>
+          <div className="row-between mt-3 text-important-bold">
+            <span>Se agregarán</span>
+            <span>{formatMoney(estimatedTotal)}</span>
+          </div>
+        </div>
+      )}
+
+      {error && <p className="field-error mt-4" role="alert">{error}</p>}
+
       {message && (
         <p className="badge badge-ok mt-4" role="status">
           {message}
@@ -390,100 +432,27 @@ function AddProductsModal({ order, onClose }: { order: Order; onClose: () => voi
       </div>
 
       {assembling && (
-        <AddAssembler
+        <ProductAssemblerModal
           product={assembling}
           groups={groups}
-          onAdd={(quantity, option_ids) => {
-            setLines((prev) => [...prev, { product: assembling, quantity, option_ids }]);
+          allowsMultipleIngredients={
+            categories.data?.find((category) => category.id === assembling.category_id)?.allows_multiple_ingredients ?? false
+          }
+          onAdd={(result: AssemblerResult) => {
+            const unitPrice = parseFloat(result.product.base_price) + result.options.reduce((sum, option) => sum + option.extra_cost, 0);
+            setLines((prev) => [...prev, {
+              product: result.product,
+              quantity: result.quantity,
+              option_ids: result.option_ids,
+              unit_price: unitPrice,
+            }]);
             setAssembling(null);
-            setMessage(`${assembling.name} agregada.`);
+            setMessage(`${result.product.name} agregada.`);
             setTimeout(() => setMessage(null), 1800);
           }}
           onClose={() => setAssembling(null)}
         />
       )}
-    </Modal>
-  );
-}
-
-function AddAssembler({
-  product,
-  groups,
-  onAdd,
-  onClose,
-}: {
-  product: Product;
-  groups: OptionGroup[];
-  onAdd: (quantity: number, option_ids: number[]) => void;
-  onClose: () => void;
-}) {
-  const [selected, setSelected] = useState<Record<number, number[]>>({});
-  const [quantity, setQuantity] = useState(1);
-
-  const missing = groups.find((g) => (selected[g.id] ?? []).length === 0);
-
-  return (
-    <Modal title={`Preparar ${product.name}`} onClose={onClose}>
-      <div className="stack gap-5">
-        {groups.map((group) => (
-          <fieldset key={group.id} className="fieldset-clean">
-            <legend className="font-extrabold">{group.name}</legend>
-            <div className="row gap-2 flex-wrap">
-              {group.options
-                .filter((o) => o.is_active)
-                .map((option) => {
-                  const multi = group.name === "Fruta";
-                  const chosen = (selected[group.id] ?? []).includes(option.id);
-                  return (
-                    <button
-                      key={option.id}
-                      className={chosen ? "btn btn-primary" : "btn btn-secondary"}
-                      aria-pressed={chosen}
-                      onClick={() =>
-                        setSelected((prev) => {
-                          const current = prev[group.id] ?? [];
-                          return {
-                            ...prev,
-                            [group.id]: multi
-                              ? chosen
-                                ? current.filter((id) => id !== option.id)
-                                : [...current, option.id]
-                              : [option.id],
-                          };
-                        })
-                      }
-                    >
-                      {option.name}
-                      {parseFloat(option.extra_cost) > 0 && ` +${formatMoney(parseFloat(option.extra_cost))}`}
-                    </button>
-                  );
-                })}
-            </div>
-          </fieldset>
-        ))}
-        {missing && (
-          <p className="field-error" role="alert">
-            Elige {missing.name.toLowerCase()} para continuar.
-          </p>
-        )}
-        <div className="row gap-3">
-          <span className="font-extrabold">Cantidad</span>
-          <button className="btn btn-secondary qty-btn" aria-label="Quitar uno" onClick={() => setQuantity((q) => Math.max(1, q - 1))}>
-            −
-          </button>
-          <span className="font-extrabold text-2xl">{quantity}</span>
-          <button className="btn btn-secondary qty-btn" aria-label="Agregar uno" onClick={() => setQuantity((q) => Math.min(99, q + 1))}>
-            +
-          </button>
-        </div>
-        <button
-          className="btn btn-primary btn-large btn-block"
-          disabled={!!missing}
-          onClick={() => onAdd(quantity, Object.values(selected).flat())}
-        >
-          Agregar · {formatMoney(parseFloat(product.base_price) * quantity)}
-        </button>
-      </div>
     </Modal>
   );
 }

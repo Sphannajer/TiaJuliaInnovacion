@@ -5,17 +5,21 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
-
     app_name: str = "Tia Julia API"
     app_env: str = "development"
     api_v1_prefix: str = "/api/v1"
-    database_url: str = "postgresql://postgres:privva12345@localhost:5432/tiajulia"
+    database_url: str
     timezone: str = "America/Lima"
     cors_origins: str = "http://localhost:5173"
     ml_model_dir: str = "./models"
     report_output_dir: str = "./generated_reports"
     log_level: str = "INFO"
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
 
     @property
     def sqlalchemy_database_uri(self) -> str:

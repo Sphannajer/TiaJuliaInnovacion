@@ -42,8 +42,8 @@ FEATURE_COLUMNS = [
     "rolling_mean_28",
 ]
 
-MIN_WEEKS = 4  # MVP threshold (sección 30.1)
-MIN_HISTORY_DAYS = MIN_WEEKS * 7 // 2  # 14 days of data minimum
+MIN_WEEKS = 4
+MIN_HISTORY_DAYS = MIN_WEEKS * 7 // 2
 
 
 def _confidence_score(r2: float) -> Decimal:

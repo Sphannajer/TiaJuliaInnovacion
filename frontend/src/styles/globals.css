@@ -637,7 +637,7 @@
   }
 
   .modal-body {
-    @apply overflow-y-auto px-6 py-5;
+    @apply min-h-0 overflow-y-auto px-6 py-5;
   }
 
   .modal-actions {
@@ -646,6 +646,38 @@
 
   .modal-footer {
     @apply flex flex-wrap justify-end gap-3 border-t border-line bg-brand-bone/60 px-6 py-4;
+  }
+
+  .product-stepper {
+    @apply grid grid-cols-4 gap-1 border-b border-line bg-surface px-6 py-3;
+  }
+
+  .product-stepper__step {
+    @apply flex min-h-[52px] cursor-pointer items-center justify-center gap-2 rounded-brand px-2 text-center text-base font-bold text-ink-soft;
+  }
+
+  .product-stepper__step:disabled {
+    @apply cursor-not-allowed opacity-70;
+  }
+
+  .product-stepper__step--current {
+    @apply bg-brand-beige text-ink;
+  }
+
+  .product-stepper__step--complete {
+    @apply text-brand-green;
+  }
+
+  .product-stepper__marker {
+    @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-line bg-surface font-extrabold text-ink-soft;
+  }
+
+  .product-stepper__step--current .product-stepper__marker {
+    @apply border-brand-red bg-brand-red text-white;
+  }
+
+  .product-stepper__step--complete .product-stepper__marker {
+    @apply border-brand-green bg-brand-green text-white;
   }
 
   /* ===== Control segmentado (7.x): activo con borde + fondo ===== */
@@ -748,12 +780,28 @@
     @apply bg-brand-bone/50;
   }
 
+  .recipe-editor__intro {
+    @apply mb-4 text-base text-ink-soft;
+  }
+
+  .recipe-editor__sizes {
+    @apply mb-4 rounded-brand border border-line bg-surface p-3;
+  }
+
+  .recipe-editor__sizes-head {
+    @apply mb-2 flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .recipe-editor__sizes-head > span {
+    @apply text-important font-extrabold text-ink;
+  }
+
   .recipe-tabs {
-    @apply mb-3 flex flex-wrap gap-2;
+    @apply flex flex-wrap gap-2;
   }
 
   .recipe-tab {
-    @apply min-h-[44px] cursor-pointer whitespace-nowrap rounded-full border-2 border-line bg-surface px-4 text-base font-bold text-ink-soft transition-colors duration-150;
+    @apply min-h-[56px] min-w-[120px] flex-1 cursor-pointer whitespace-nowrap rounded-brand border-2 border-line bg-surface px-5 text-important font-bold text-ink-soft transition-colors duration-150;
   }
 
   .recipe-tab[aria-pressed="true"] {
@@ -793,11 +841,104 @@
   }
 
   .recipe-copy {
-    @apply flex cursor-pointer items-center gap-2 rounded-brand border border-line bg-surface px-2 py-1 text-aux font-bold text-ink-soft;
+    @apply flex min-h-[44px] cursor-pointer items-center gap-2 rounded-brand border border-line bg-surface px-3 py-1 text-aux font-bold text-ink-soft;
   }
 
   .recipe-copy select {
     @apply min-h-[36px] cursor-pointer border-none bg-transparent text-aux font-bold text-ink;
+  }
+
+  .recipe-editor__views {
+    @apply mb-4 grid grid-cols-1 gap-2 tablet:grid-cols-2;
+  }
+
+  .recipe-view-tab {
+    @apply flex min-h-[58px] cursor-pointer items-center justify-between gap-3 rounded-brand border-2 border-line bg-surface px-4 text-left text-important font-extrabold text-ink-soft;
+  }
+
+  .recipe-view-tab strong {
+    @apply flex min-h-[32px] min-w-[32px] items-center justify-center rounded-full bg-brand-bone px-2 text-ink;
+  }
+
+  .recipe-view-tab--active {
+    @apply border-brand-red bg-brand-beige text-ink;
+  }
+
+  .recipe-view-tab--active strong {
+    @apply bg-brand-red text-white;
+  }
+
+  .recipe-view {
+    @apply grid gap-4;
+  }
+
+  .recipe-option-group {
+    @apply grid gap-2;
+  }
+
+  .recipe-option-group h4 {
+    @apply m-0 text-important font-extrabold capitalize text-ink;
+  }
+
+  .recipe-ingredient-list {
+    @apply grid gap-3;
+  }
+
+  .recipe-ingredient-row {
+    @apply grid gap-3 rounded-brand border-2 border-line bg-surface p-4;
+  }
+
+  .recipe-ingredient-row__head {
+    @apply flex flex-wrap items-start justify-between gap-2;
+  }
+
+  .recipe-ingredient-row__name {
+    @apply text-important text-ink;
+  }
+
+  .recipe-ingredient-row__linked {
+    @apply text-base font-bold text-ink-soft;
+  }
+
+  .recipe-quantity__natural {
+    @apply m-0 text-base text-ink-soft;
+  }
+
+  .recipe-empty,
+  .recipe-view__summary {
+    @apply m-0 text-base text-ink-soft;
+  }
+
+  .recipe-view__summary {
+    @apply border-t border-line pt-3 font-extrabold;
+  }
+
+  .recipe-search {
+    @apply flex min-h-[58px] items-center gap-2.5 rounded-brand border-2 border-line bg-surface px-4;
+  }
+
+  .recipe-search:focus-within {
+    @apply border-focus;
+  }
+
+  .recipe-search input {
+    @apply min-h-[52px] w-full border-none bg-transparent text-important text-ink outline-none;
+  }
+
+  .recipe-search-results {
+    @apply grid gap-2;
+  }
+
+  .recipe-search-result {
+    @apply flex min-h-[52px] cursor-pointer items-center gap-2 rounded-brand border border-line bg-surface px-4 text-left text-important font-bold text-ink;
+  }
+
+  .recipe-search-result > span {
+    @apply inline-flex items-center gap-2;
+  }
+
+  .recipe-search-result:hover {
+    @apply border-brand-red bg-brand-beige;
   }
 
   /* ===== Ensamblador de receta por cuadros + contadores ===== */
@@ -855,15 +996,24 @@
   }
 
   .assembler-qty {
-    @apply mt-auto flex items-center gap-2;
+    @apply flex items-center gap-2;
   }
 
   .assembler-qty__btn {
-    @apply min-h-[40px] min-w-[40px] px-0;
+    @apply flex min-h-[52px] min-w-[52px] shrink-0 cursor-pointer items-center justify-center rounded-brand border-2 border-line bg-surface px-0 text-ink;
+  }
+
+  .assembler-qty__btn:hover:not(:disabled) {
+    @apply border-brand-red bg-brand-beige;
+  }
+
+  .assembler-qty__btn:disabled,
+  .assembler-clear:disabled {
+    @apply cursor-not-allowed opacity-50;
   }
 
   .assembler-qty input {
-    @apply min-h-[var(--touch-comfort)] w-full rounded-brand border-2 border-line bg-surface px-3 font-ui text-base text-ink;
+    @apply min-h-[52px] w-full min-w-0 rounded-brand border-2 border-line bg-surface px-3 text-center font-ui text-important font-extrabold text-ink;
   }
 
   .assembler-qty__unit {
@@ -871,7 +1021,19 @@
   }
 
   .assembler-count {
-    @apply min-w-[36px] text-center text-h3 font-extrabold text-ink;
+    @apply text-h3 font-extrabold text-ink;
+  }
+
+  .assembler-qty__natural {
+    @apply flex min-h-[52px] min-w-0 flex-1 items-center justify-center gap-2 rounded-brand border-2 border-line bg-surface px-3;
+  }
+
+  .assembler-qty__natural input {
+    @apply min-h-0 border-0 bg-transparent p-0 text-center;
+  }
+
+  .assembler-qty__label {
+    @apply text-base font-bold text-ink-soft;
   }
 
   /* Layout 65% catálogo / 35% constructor (sección 7.1). */
@@ -889,15 +1051,15 @@
   }
 
   .assembler-clear {
-    @apply flex min-h-[40px] cursor-pointer items-center gap-1 rounded-brand border-2 border-line px-2 text-aux font-bold text-ink-soft;
+    @apply flex min-h-[40px] cursor-pointer items-center gap-1 justify-self-start border-0 bg-transparent px-0 text-aux font-bold text-ink-soft;
   }
 
   .assembler-increments {
-    @apply flex flex-wrap gap-2;
+    @apply flex flex-wrap items-center gap-2;
   }
 
   .assembler-increment {
-    @apply min-h-[var(--touch-comfort)] flex-1 cursor-pointer whitespace-nowrap rounded-brand border-2 border-brand-orange bg-brand-bone px-3 text-base font-extrabold text-ink transition-colors duration-150;
+    @apply min-h-[44px] cursor-pointer whitespace-nowrap rounded-brand border border-line bg-surface px-3 text-base font-bold text-ink-soft transition-colors duration-150;
   }
 
   .assembler-increment:hover {
@@ -961,6 +1123,26 @@
 
   .form-section__hint {
     @apply text-aux text-ink-soft;
+  }
+
+  .product-wizard-step {
+    @apply flex flex-col gap-4;
+  }
+
+  .form-section__num--sub {
+    @apply bg-brand-bone text-brand-orange;
+  }
+
+  .product-kind-choice__copy {
+    @apply flex min-w-0 flex-col items-start text-left;
+  }
+
+  .product-kind-choice__copy strong {
+    @apply text-important;
+  }
+
+  .product-kind-choice__copy small {
+    @apply mt-0.5 text-aux font-normal;
   }
 
   .checkbox-field--off {
@@ -1090,6 +1272,16 @@
 
   .modal-footer__summary {
     @apply mr-auto flex items-center text-important font-bold text-ink-soft;
+  }
+
+  @media (max-width: 767px) {
+    .product-stepper {
+      @apply grid-cols-2 gap-1 px-4;
+    }
+
+    .modal-footer__summary {
+      @apply mr-0 w-full;
+    }
   }
 
   /* ===== Cajas de medios de pago (Efectivo verde, Yape morado) ===== */

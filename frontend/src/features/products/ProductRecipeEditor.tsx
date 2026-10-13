@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, Eraser, Minus, Plus, Search, Trash2 } from "lucide-react";
-import { behaviorIncrements } from "../../lib/stock";
+import { Copy, Minus, Plus, RotateCcw, Search, Trash2 } from "lucide-react";
+import "./ProductRecipeEditor.css";
+import { behaviorIncrements, convertToBaseUnit } from "../../lib/stock";
 import type { Ingredient, Option, OptionGroup, RecipeComponent } from "../../types";
 
 interface ProductRecipeEditorProps {
@@ -34,6 +35,45 @@ function formatQty(value: number): string {
   return round3(value).toLocaleString("es-PE", { maximumFractionDigits: 3 });
 }
 
+function canonicalUnit(unit: string): string {
+  const value = unit.trim().toLowerCase();
+  if (["g", "gramo", "gramos"].includes(value)) return "g";
+  if (["kg", "kilogramo", "kilogramos", "kilo", "kilos"].includes(value)) return "kg";
+  if (value === "ml" || value === "mililitro" || value === "mililitros") return "ml";
+  if (["l", "litro", "litros"].includes(value)) return "l";
+  return unit;
+}
+
+function convertIngredientQuantity(amount: number, from: string, to: string): number {
+  return convertToBaseUnit(amount, canonicalUnit(from), canonicalUnit(to));
+}
+
+function minimumUnitFor(ingredient: Ingredient): string {
+  const base = canonicalUnit(ingredient.consumption_unit || ingredient.base_unit);
+  if (["kg", "kilogramo", "kilogramos", "kilo", "kilos"].includes(base)) return "g";
+  if (["l", "litro", "litros"].includes(base)) return "ml";
+  return base;
+}
+
+function recipeEquivalence(ingredient: Ingredient, quantity: number): string | null {
+  const minimumUnit = minimumUnitFor(ingredient);
+  const largeUnit = minimumUnit === "ml" ? "l" : minimumUnit === "g" ? "kg" : null;
+  if (!largeUnit) return null;
+
+  const minimumAmount = convertIngredientQuantity(quantity, ingredient.base_unit, minimumUnit);
+  const largeAmount = convertIngredientQuantity(minimumAmount, minimumUnit, largeUnit);
+  const naturalAmount = convertIngredientQuantity(
+    toNumber(ingredient.unit_weight),
+    ingredient.base_unit,
+    minimumUnit,
+  );
+  const naturalCount = naturalAmount > 0
+    ? minimumAmount / naturalAmount
+    : minimumAmount;
+  const naturalUnit = naturalAmount > 0 ? ingredient.unit_name || minimumUnit : minimumUnit;
+  return `${formatQty(naturalCount)} ${naturalUnit} = ${formatQty(largeAmount)} ${largeUnit}`;
+}
+
 /**
  * Ensamblador producto ↔ insumos (sección 24.1).
  *
@@ -54,6 +94,7 @@ export function ProductRecipeEditor({
   const [activeSizeId, setActiveSizeId] = useState<number | null>(
     sizeOptions[0]?.id ?? null,
   );
+  const [activeView, setActiveView] = useState<"choices" | "always">("choices");
   const [search, setSearch] = useState("");
 
   // Si cambian los tamaños, asegura que el tamaño activo siga existiendo.
@@ -185,7 +226,7 @@ export function ProductRecipeEditor({
     );
     return (
       <div className="assembler-increments" role="group" aria-label={`Incrementos de ${ingredient.name}`}>
-        {buttons.map((button) => (
+        {buttons.slice(0, 2).map((button) => (
           <button
             key={button.label}
             type="button"
@@ -261,129 +302,195 @@ export function ProductRecipeEditor({
     const row = rowFor(ingredient.id, optionId, activeSizeId);
     const quantity = toNumber(row?.quantity_per_unit);
     const unitName = ingredient.unit_name || "unidad";
+    const minimumUnit = minimumUnitFor(ingredient);
+    const displayedQuantity = convertIngredientQuantity(quantity, ingredient.base_unit, minimumUnit);
 
     if (weight <= 0) {
-      // Sin unidad natural definida: se escribe la cantidad en unidad base.
+      const firstIncrement = behaviorIncrements(
+        ingredient.behavioral_type,
+        ingredient.base_unit,
+        ingredient.increments,
+      )[0]?.amountInBase ?? 1;
       return (
-        <div className="assembler-qty">
-          <input
-            aria-label={`Cantidad de ${ingredient.name} en ${ingredient.base_unit}`}
-            inputMode="decimal"
-            value={row?.quantity_per_unit ? trimNumber(quantity) : ""}
-            placeholder="0"
-            onChange={(e) =>
-              upsert(ingredient.id, optionId, activeSizeId, toNumber(e.target.value))
-            }
-          />
-          <span className="assembler-qty__unit">{ingredient.base_unit}</span>
+        <div className="assembler-qty-block">
+          <span className="assembler-qty__label">Cantidad por venta</span>
+          <div className="assembler-qty">
+            <button
+              type="button"
+              className="assembler-qty__btn"
+              aria-label={`Disminuir cantidad de ${ingredient.name}`}
+              disabled={quantity <= 0}
+              onClick={() => addAmount(ingredient, optionId, -firstIncrement)}
+            >
+              <Minus size={20} aria-hidden />
+            </button>
+            <div className="assembler-qty__natural">
+              <input
+                aria-label={`Cantidad de ${ingredient.name} en ${minimumUnit}`}
+                inputMode="decimal"
+                value={row?.quantity_per_unit ? trimNumber(displayedQuantity) : ""}
+                placeholder="0"
+                onChange={(e) =>
+                  upsert(
+                    ingredient.id,
+                    optionId,
+                    activeSizeId,
+                    convertIngredientQuantity(toNumber(e.target.value), minimumUnit, ingredient.base_unit),
+                  )
+                }
+              />
+              <span className="assembler-qty__unit">{minimumUnit}</span>
+            </div>
+            <button
+              type="button"
+              className="assembler-qty__btn"
+              aria-label={`Aumentar cantidad de ${ingredient.name}`}
+              onClick={() => addAmount(ingredient, optionId, firstIncrement)}
+            >
+              <Plus size={20} aria-hidden />
+            </button>
+          </div>
+          <span className="assembler-increments__label">Ajuste rápido</span>
+          {renderIncrements(ingredient, optionId)}
+          <button
+            type="button"
+            className="assembler-clear"
+            aria-label={`Quitar cantidad de ${ingredient.name}`}
+            disabled={quantity <= 0}
+            onClick={() => upsert(ingredient.id, optionId, activeSizeId, 0)}
+          >
+            <RotateCcw size={16} aria-hidden /> Quitar cantidad
+          </button>
         </div>
       );
     }
 
-    const units = Math.round((quantity / weight) * 1000) / 1000;
     return (
       <div className="assembler-qty-block">
+        <span className="assembler-qty__label">Cantidad por venta</span>
         <div className="assembler-qty">
           <button
             type="button"
-            className="btn btn-secondary assembler-qty__btn"
-            aria-label={`Quitar una ${unitName} de ${ingredient.name}`}
-            disabled={units <= 0}
+            className="assembler-qty__btn"
+            aria-label={`Disminuir cantidad de ${ingredient.name}`}
+            disabled={quantity <= 0}
             onClick={() => addUnit(ingredient, optionId, -1)}
           >
             <Minus size={18} aria-hidden />
           </button>
-          <span className="assembler-count" aria-live="polite">
-            {formatQty(units)} {unitName}
-          </span>
+          <div className="assembler-qty__natural">
+            <input
+              aria-label={`Cantidad de ${ingredient.name} en ${minimumUnit}`}
+              inputMode="decimal"
+              value={row?.quantity_per_unit ? trimNumber(displayedQuantity) : ""}
+              placeholder="0"
+              onChange={(e) => upsert(
+                ingredient.id,
+                optionId,
+                activeSizeId,
+                convertIngredientQuantity(toNumber(e.target.value), minimumUnit, ingredient.base_unit),
+              )}
+            />
+            <span className="assembler-qty__unit">{minimumUnit}</span>
+          </div>
           <button
             type="button"
-            className="btn btn-primary assembler-qty__btn"
-            aria-label={`Agregar una ${unitName} de ${ingredient.name}`}
+            className="assembler-qty__btn"
+            aria-label={`Aumentar cantidad de ${ingredient.name} en una ${unitName}`}
             onClick={() => addUnit(ingredient, optionId, 1)}
           >
             <Plus size={18} aria-hidden />
           </button>
-          <button
-            type="button"
-            className="assembler-clear"
-            aria-label={`Limpiar cantidad de ${ingredient.name}`}
-            disabled={quantity <= 0}
-            onClick={() => upsert(ingredient.id, optionId, activeSizeId, 0)}
-          >
-            <Eraser size={16} aria-hidden /> Limpiar
-          </button>
         </div>
+        <span className="assembler-increments__label">Ajuste rápido</span>
         {renderIncrements(ingredient, optionId)}
+        <button
+          type="button"
+          className="assembler-clear"
+          aria-label={`Limpiar cantidad de ${ingredient.name}`}
+          disabled={quantity <= 0}
+          onClick={() => upsert(ingredient.id, optionId, activeSizeId, 0)}
+        >
+          <RotateCcw size={16} aria-hidden /> Quitar cantidad
+        </button>
       </div>
     );
   };
 
   return (
     <fieldset className={showLegend ? "fieldset recipe-editor" : "fieldset-clean recipe-editor"}>
-      {showLegend && <legend>Receta: qué insumos se descuentan</legend>}
-      <p className="field-help mb-3">
-        Presiona los cuadros para decir cuánto lleva. Cuenta en unidades naturales
-        (fresas, vasos) y el sistema lo convierte solo a kilos o mililitros.
-      </p>
+      {showLegend && <legend>Qué insumos descuenta</legend>}
+      <p className="recipe-editor__intro">Indica cuánto usa una venta. Estas cantidades se descontarán del inventario.</p>
 
       {sizeOptions.length > 0 && (
-        <div className="recipe-tabs" role="tablist" aria-label="Tamaño de la receta">
-          {sizeOptions.map((size) => (
-            <button
-              key={size.id}
-              type="button"
-              role="tab"
-              aria-pressed={size.id === activeSizeId}
-              className="recipe-tab"
-              onClick={() => setActiveSizeId(size.id)}
-            >
-              {size.name}
-            </button>
-          ))}
+        <div className="recipe-editor__sizes">
+          <div className="recipe-editor__sizes-head">
+            <span>Tamaño que estás editando</span>
+            {sizeOptions.length > 1 && activeSizeId != null && (
+              <label className="recipe-copy">
+                <Copy size={16} aria-hidden />
+                <span>Copiar receta</span>
+                <select
+                  aria-label="Copiar cantidades de otro tamaño"
+                  value=""
+                  onChange={(e) => {
+                    if (e.target.value) copyFromSize(Number(e.target.value));
+                  }}
+                >
+                  <option value="">Desde otro tamaño…</option>
+                  {sizeOptions.filter((s) => s.id !== activeSizeId).map((size) => (
+                    <option key={size.id} value={size.id}>{size.name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+          </div>
+          <div className="recipe-tabs" role="tablist" aria-label="Tamaño de la receta">
+            {sizeOptions.map((size) => (
+              <button
+                key={size.id}
+                type="button"
+                role="tab"
+                aria-selected={size.id === activeSizeId}
+                aria-pressed={size.id === activeSizeId}
+                className="recipe-tab"
+                onClick={() => setActiveSizeId(size.id)}
+              >
+                {size.name}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="recipe-editor__split">
-      <div className="recipe-editor__catalog">
-      {/* ===== Lo que eligen tus clientes (fruta, base, endulzante…) ===== */}
-      {triggerGroups.length > 0 && (
-        <div className="assembler-section">
-          <p className="assembler-section__title">Según lo que elige el cliente</p>
-          {triggerGroups.map((group) => (
-            <div key={group.id} className="assembler-block">
-              <p className="assembler-block__title">{group.name}</p>
-              <div className="assembler-grid">
+      <div className="recipe-editor__views" role="tablist" aria-label="Tipo de insumos">
+        <button type="button" role="tab" aria-selected={activeView === "choices"} aria-pressed={activeView === "choices"} className={`recipe-view-tab${activeView === "choices" ? " recipe-view-tab--active" : ""}`} onClick={() => setActiveView("choices")}>
+          <span>Según la elección del cliente</span><strong>{triggerGroups.reduce((total, group) => total + group.options.length, 0)}</strong>
+        </button>
+        <button type="button" role="tab" aria-selected={activeView === "always"} aria-pressed={activeView === "always"} className={`recipe-view-tab${activeView === "always" ? " recipe-view-tab--active" : ""}`} onClick={() => setActiveView("always")}>
+          <span>Siempre lleva</span><strong>{alwaysRows.length}</strong>
+        </button>
+      </div>
+
+      {activeView === "choices" ? (
+        <div className="recipe-view">
+          {triggerGroups.length === 0 ? (
+            <p className="recipe-empty">Este producto no tiene opciones con insumo ligado.</p>
+          ) : triggerGroups.map((group) => (
+            <div key={group.id} className="recipe-option-group">
+              <h4>{group.name}</h4>
+              <div className="recipe-ingredient-list recipe-ingredient-list--choices">
                 {group.options.map((option) => {
                   const ingredient = ingredientById.get(option.linked_ingredient_id as number);
                   if (!ingredient) return null;
-                  const row = rowFor(ingredient.id, option.id, activeSizeId);
-                  const quantity = toNumber(row?.quantity_per_unit);
-                  const selected = quantity > 0;
-                  const weight = toNumber(ingredient.unit_weight);
-                  const units = weight > 0 ? round3(quantity / weight) : 0;
+                  const quantity = toNumber(rowFor(ingredient.id, option.id, activeSizeId)?.quantity_per_unit);
                   return (
-                    <div
-                      key={option.id}
-                      className={`assembler-tile${selected ? " assembler-tile--active" : ""}`}
-                    >
-                      <div className="assembler-tile__head">
-                        <span className="assembler-tile__name">
-                          {selected && <Check size={16} aria-hidden />} {option.name}
-                        </span>
-                        <span className="badge badge-neutral">{ingredient.name}</span>
+                      <div key={option.id} className="recipe-ingredient-row recipe-ingredient-row--choice">
+                      <div className="recipe-ingredient-row__head">
+                        <strong className="recipe-ingredient-row__name">{option.name}</strong>
+                        <span className="recipe-ingredient-row__linked">{ingredient.name}</span>
                       </div>
-                      {weight > 0 && (
-                        <p className="assembler-tile__meta">
-                          1 {ingredient.unit_name || "unidad"} = {formatQty(weight)} {ingredient.base_unit}
-                        </p>
-                      )}
-                      {selected && (
-                        <p className="assembler-tile__meta">
-                          {formatQty(quantity)} {ingredient.base_unit}
-                          {weight > 0 ? ` · ${formatQty(units)} ${ingredient.unit_name || "unidad"}` : ""}
-                        </p>
-                      )}
+                      {recipeEquivalence(ingredient, quantity) && <p className="recipe-quantity__natural">{recipeEquivalence(ingredient, quantity)}</p>}
                       {renderCount(ingredient, option.id)}
                     </div>
                   );
@@ -391,150 +498,77 @@ export function ProductRecipeEditor({
               </div>
             </div>
           ))}
+          <p className="recipe-view__summary">{activeRows.filter((row) => row.option_id != null).length} ingredientes configurados</p>
         </div>
-      )}
-      {triggerGroups.length === 0 && (
-        <p className="text-secondary text-aux">Este producto no tiene opciones con insumo ligado.</p>
-      )}
-      </div>
-
-      {/* ===== Insumos que siempre lleva (constructor) ===== */}
-      <div className="recipe-editor__builder assembler-section">
-        <p className="assembler-section__title">Siempre lleva</p>
+      ) : (
+      <div className="recipe-view">
+        <div className="recipe-view__heading">
+          <h3>Ingredientes que siempre lleva</h3>
+        </div>
         {alwaysRows.length === 0 && (
-          <p className="text-secondary text-aux">
-            Aún no hay insumos fijos. Agrega uno abajo.
-          </p>
+          <p className="recipe-empty">No hay otros insumos agregados.</p>
         )}
-        <div className="assembler-grid">
+        <div className="recipe-ingredient-list recipe-ingredient-list--always">
           {alwaysRows.map((row) => {
             const ingredient = ingredientById.get(row.ingredient_id);
             if (!ingredient) return null;
-            const weight = toNumber(ingredient.unit_weight);
             const quantity = toNumber(row.quantity_per_unit);
-            const units = weight > 0 ? round3(quantity / weight) : 0;
             return (
-              <div key={`always-${row.ingredient_id}`} className="assembler-tile assembler-tile--active">
-                <div className="assembler-tile__head">
-                  <span className="assembler-tile__name">
-                    <Check size={16} aria-hidden /> {ingredient.name}
-                  </span>
+              <div key={`always-${row.ingredient_id}`} className="recipe-ingredient-row recipe-ingredient-row--always">
+                <div className="recipe-ingredient-row__head">
+                  <strong className="recipe-ingredient-row__name">{ingredient.name}</strong>
                   <button
                     type="button"
-                    className="assembler-tile__remove"
+                    className="recipe-remove-ingredient"
                     aria-label={`Quitar ${ingredient.name} de la receta`}
                     onClick={() => upsert(ingredient.id, null, activeSizeId, 0)}
                   >
                     <Trash2 size={16} aria-hidden />
+                    <span>Eliminar</span>
                   </button>
                 </div>
-                <p className="assembler-tile__meta">
-                  {weight > 0
-                    ? `${formatQty(units)} ${ingredient.unit_name || "unidad"} = ${formatQty(quantity)} ${ingredient.base_unit}`
-                    : `${formatQty(quantity)} ${ingredient.base_unit}`}
-                </p>
+                {recipeEquivalence(ingredient, quantity) && <p className="recipe-quantity__natural">{recipeEquivalence(ingredient, quantity)}</p>}
                 {renderCount(ingredient, null)}
               </div>
             );
           })}
         </div>
 
-        <label className="assembler-search">
+        <label className="recipe-search">
           <Search size={18} className="text-ink-soft" aria-hidden />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar insumo para agregar…"
+            placeholder="Buscar insumo…"
             aria-label="Buscar insumo para agregar a la receta"
           />
         </label>
 
-        <div className="assembler-grid">
+        {search.trim() && <div className="recipe-search-results">
           {candidates.map((ingredient) => (
             <button
               key={`cand-${ingredient.id}`}
               type="button"
-              className="assembler-tile assembler-tile--add"
+              className="recipe-search-result"
               onClick={() => {
                 const weight = toNumber(ingredient.unit_weight);
                 upsert(ingredient.id, null, activeSizeId, weight > 0 ? weight : 1);
               }}
             >
-              <span className="assembler-tile__name">
+              <span>
                 <Plus size={16} aria-hidden /> {ingredient.name}
-              </span>
-              <span className="assembler-tile__meta">
-                {ingredient.unit_weight
-                  ? `1 ${ingredient.unit_name || "unidad"} = ${formatQty(toNumber(ingredient.unit_weight))} ${ingredient.base_unit}`
-                  : `en ${ingredient.base_unit}`}
               </span>
             </button>
           ))}
           {candidates.length === 0 && (
-            <p className="text-secondary text-aux col-span-2">
+            <p className="recipe-empty">
               No hay más insumos para agregar.
             </p>
           )}
-        </div>
+        </div>}
+        <p className="recipe-view__summary">{alwaysRows.length} ingredientes configurados</p>
       </div>
-      </div>
-
-      {/* ===== Resumen en vivo ===== */}
-      <div className="assembler-summary">
-        <p className="assembler-section__title">Resumen de la receta</p>
-        {activeRows.length === 0 ? (
-          <p className="text-secondary text-aux">Todavía no agregaste insumos.</p>
-        ) : (
-          <ul className="assembler-summary__list">
-            {activeRows.map((row) => {
-              const ingredient = ingredientById.get(row.ingredient_id);
-              const option = optionGroups
-                .flatMap((g) => g.options)
-                .find((o) => o.id === row.option_id);
-              const quantity = toNumber(row.quantity_per_unit);
-              const weight = toNumber(ingredient?.unit_weight);
-              const units = weight > 0 ? round3(quantity / weight) : 0;
-              return (
-                <li key={`sum-${row.ingredient_id}-${row.option_id ?? "x"}`}>
-                  <span>
-                    {option ? `${option.name}: ` : ""}
-                    <strong>{ingredient?.name ?? "insumo"}</strong>
-                  </span>
-                  <span>
-                    {weight > 0
-                      ? `${formatQty(units)} ${ingredient?.unit_name || "unidad"} · ${formatQty(quantity)} ${ingredient?.base_unit}`
-                      : `${formatQty(quantity)} ${ingredient?.base_unit}`}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-
-        {sizeOptions.length > 1 && activeSizeId != null && (
-          <div className="recipe-actions">
-            <label className="recipe-copy">
-              <Copy size={16} aria-hidden />
-              <select
-                aria-label="Copiar cantidades de otro tamaño"
-                value=""
-                onChange={(e) => {
-                  if (e.target.value) copyFromSize(Number(e.target.value));
-                }}
-              >
-                <option value="">Copiar cantidades de…</option>
-                {sizeOptions
-                  .filter((s) => s.id !== activeSizeId)
-                  .map((size) => (
-                    <option key={size.id} value={size.id}>
-                      {size.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-          </div>
-        )}
-      </div>
+      )}
     </fieldset>
   );
 }

@@ -250,27 +250,33 @@ def create_order(db: Session, data) -> OrderResult:
 
 
 def add_detail(db: Session, order_id: int, item) -> OrderResult:
+    return add_details(db, order_id, [item])
+
+
+def add_details(db: Session, order_id: int, items) -> OrderResult:
     order = orders_repo.get_order(db, order_id)
     if order.status == OrderStatus.CANCELADO.value:
         raise InvalidOrderStateError("No se puede modificar una orden cancelada.")
     if order.status == OrderStatus.PAGADO.value:
         raise InvalidOrderStateError("La orden ya está pagada; no admite más productos.")
-    product = db.get(ProductModel, item.product_id)
-    if product is None or not product.is_active:
-        raise ProductNotFoundError()
-    unit_price, subtotal, config, options = _price_detail(db, product, item.quantity, item.option_ids)
-    detail = OrderDetailModel(
-        order_id=order.id,
-        product_id=product.id,
-        quantity=item.quantity,
-        unit_price=unit_price,
-        subtotal=subtotal,
-        assembly_config=config,
-        notes=item.notes,
-    )
-    db.add(detail)
-    db.flush()
-    alerts = _deduct_inventory(db, order, detail, options)
+    alerts: list[InventoryAlert] = []
+    for item in items:
+        product = db.get(ProductModel, item.product_id)
+        if product is None or not product.is_active:
+            raise ProductNotFoundError()
+        unit_price, subtotal, config, options = _price_detail(db, product, item.quantity, item.option_ids)
+        detail = OrderDetailModel(
+            order_id=order.id,
+            product_id=product.id,
+            quantity=item.quantity,
+            unit_price=unit_price,
+            subtotal=subtotal,
+            assembly_config=config,
+            notes=item.notes,
+        )
+        db.add(detail)
+        db.flush()
+        alerts.extend(_deduct_inventory(db, order, detail, options))
     orders_repo.recalc_order_total(db, order)
     db.commit()
     db.refresh(order)
@@ -336,7 +342,8 @@ def _config_option_ids(config: dict | None) -> list[int]:
 def _reverse_detail_inventory(db: Session, order: OrderModel, detail: OrderDetailModel) -> None:
     """Return deducted ingredients to stock when editing/removing a detail."""
     option_ids = _config_option_ids(detail.assembly_config)
-    options = _options_by_id(db, option_ids)
+    options_by_id = _options_by_id(db, option_ids)
+    options = list(options_by_id.values())
     usage = _detail_consumption(db, detail, options)
     if not usage:
         return

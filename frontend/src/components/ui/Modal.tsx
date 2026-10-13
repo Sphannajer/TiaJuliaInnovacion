@@ -6,6 +6,8 @@ import { trapFocus, focusFirstElement, rememberFocus, restoreFocus } from "../..
 interface ModalProps {
   title: string;
   subtitle?: string;
+  /** Contenido fijo entre la cabecera y el cuerpo desplazable. */
+  headerContent?: ReactNode;
   /** Contenido opcional mostrado como franja inferior fija (acciones). */
   footer?: ReactNode;
   onClose: () => void;
@@ -18,7 +20,7 @@ interface ModalProps {
  * retorno de foco y panel amplio pensado para tablet horizontal (1024×768).
  * Cabecera con acento de marca, cierre táctil de 48px y cuerpo con scroll.
  */
-export function Modal({ title, subtitle, footer, onClose, children, wide }: ModalProps) {
+export function Modal({ title, subtitle, headerContent, footer, onClose, children, wide }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -77,6 +79,7 @@ export function Modal({ title, subtitle, footer, onClose, children, wide }: Moda
           </button>
         </div>
 
+        {headerContent}
         <div className="modal-body">{children}</div>
 
         {footer && <div className="modal-footer">{footer}</div>}

@@ -5,6 +5,8 @@ import {
   ChefHat,
   Check,
   CircleAlert,
+  ChevronLeft,
+  ChevronRight,
   Info,
   PackagePlus,
   Sparkles,
@@ -59,6 +61,7 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
   const [marginPct, setMarginPct] = useState(DEFAULT_MARGIN_PCT);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
   const [touched, setTouched] = useState<{ name?: boolean; price?: boolean }>({});
 
   const sizeGroup = useMemo(
@@ -209,45 +212,106 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
 
   const applySuggestion = () => setBasePrice(String(suggestion.suggested.toFixed(2)));
 
+  const goNext = () => {
+    if (step === 1) {
+      setTouched((current) => ({ ...current, name: true }));
+      if (nameError) {
+        setError(nameError);
+        return;
+      }
+    }
+    if (step === 3 && decimalRecipeError) {
+      setError(decimalRecipeError);
+      return;
+    }
+    setError(null);
+    setStep((current) => (current < 4 ? (current + 1) as 1 | 2 | 3 | 4 : current));
+  };
+
+  const goPrevious = () => {
+    setError(null);
+    setStep((current) => (current > 1 ? (current - 1) as 1 | 2 | 3 | 4 : current));
+  };
+
   const namePreview = trimmedName ? trimmedName.toLowerCase() : "";
 
   return (
     <Modal
       wide
       title={product ? `Editar ${product.name}` : "Nuevo producto"}
-      subtitle="Completa los pasos; el precio base es el del tamaño más pequeño."
+      subtitle="Completa un paso a la vez."
       onClose={onClose}
+      headerContent={
+        <nav className="product-stepper" aria-label="Pasos del producto">
+          {[
+            [1, "Producto"],
+            [2, "Cómo se vende"],
+            [3, "Qué descuenta"],
+            [4, "Precio y confirmar"],
+          ].map(([value, label]) => {
+            const number = value as 1 | 2 | 3 | 4;
+            const complete = number < step;
+            return (
+              <button
+                key={number}
+                type="button"
+                className={`product-stepper__step${number === step ? " product-stepper__step--current" : ""}${complete ? " product-stepper__step--complete" : ""}`}
+                aria-current={number === step ? "step" : undefined}
+                onClick={() => number <= step && setStep(number)}
+                disabled={number > step}
+              >
+                <span className="product-stepper__marker">
+                  {complete ? <Check size={18} aria-hidden /> : number}
+                </span>
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      }
       footer={
         <>
           <span className="modal-footer__summary">
-            {price > 0 ? (
+            {step === 4 && price > 0 ? (
               <>
                 Precio base: <strong>{formatMoney(price)}</strong>
               </>
             ) : (
-              "Falta el precio base"
+              `Paso ${step} de 4`
             )}
           </span>
           <button className="btn btn-secondary btn-large" onClick={onClose}>
             Cancelar
           </button>
-          <button className="btn btn-primary btn-large" disabled={saving} onClick={() => void save()}>
-            {saving ? "Guardando…" : product ? "Guardar cambios" : "Crear producto"}
-          </button>
+          {step > 1 && (
+            <button type="button" className="btn btn-secondary btn-large" onClick={goPrevious}>
+              <ChevronLeft size={20} aria-hidden /> Anterior
+            </button>
+          )}
+          {step < 4 ? (
+            <button type="button" className="btn btn-primary btn-large" onClick={goNext}>
+              Siguiente <ChevronRight size={20} aria-hidden />
+            </button>
+          ) : (
+            <button className="btn btn-primary btn-large" disabled={saving} onClick={() => void save()}>
+              {saving ? "Guardando…" : product ? "Guardar cambios" : "Crear producto"}
+            </button>
+          )}
         </>
       }
     >
       <div className="stack-lg">
-        {/* ===== 1. Tipo ===== */}
-        <section className="form-section">
+        <div hidden={step !== 1} className="product-wizard-step">
+          {/* ===== 1. Producto ===== */}
+          <section className="form-section">
           <header className="form-section__head">
             <span className="form-section__num">1</span>
             <div className="min-w-0">
               <h3 className="form-section__title">¿Qué vas a crear?</h3>
               <p className="form-section__hint">
                 {kind === "jugo"
-                  ? "Elegirás el tamaño (personal, pareja o familiar) y cuánto insumo lleva cada uno."
-                  : "Un producto normal descuenta la misma cantidad de insumos sin importar el tamaño."}
+                  ? "Puede cambiar según el tamaño y las opciones."
+                  : "Lleva una receta fija."}
               </p>
             </div>
           </header>
@@ -258,7 +322,11 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
               className={kind === "producto" ? "btn btn-primary btn-large flex-1" : "btn btn-secondary btn-large flex-1"}
               onClick={() => changeKind("producto")}
             >
-              <PackagePlus size={22} aria-hidden /> Producto
+              <PackagePlus size={24} aria-hidden />
+              <span className="product-kind-choice__copy">
+                <strong>Producto</strong>
+                <small>Producto con una receta fija</small>
+              </span>
             </button>
             <button
               type="button"
@@ -268,7 +336,11 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
               title={!sizeGroup ? "No hay un grupo de opciones llamado “tamaño”." : undefined}
               onClick={() => changeKind("jugo")}
             >
-              <ChefHat size={22} aria-hidden /> Jugo (con tamaños)
+              <ChefHat size={24} aria-hidden />
+              <span className="product-kind-choice__copy">
+                <strong>Jugo</strong>
+                <small>Puede cambiar según tamaño y opciones</small>
+              </span>
             </button>
           </div>
           {!sizeGroup && (
@@ -276,12 +348,12 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
               Para crear jugos con tamaños, primero define un grupo de opciones llamado “tamaño”.
             </p>
           )}
-        </section>
+          </section>
 
-        {/* ===== 2. Datos básicos ===== */}
-        <section className="form-section">
+          {/* ===== Datos básicos ===== */}
+          <section className="form-section">
           <header className="form-section__head">
-            <span className="form-section__num">2</span>
+            <span className="form-section__num form-section__num--sub" aria-hidden>•</span>
             <div className="min-w-0">
               <h3 className="form-section__title">Datos del producto</h3>
               <p className="form-section__hint">Cómo se llama, en qué categoría va y si ya se puede vender.</p>
@@ -307,7 +379,7 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
                 Se guardará como <strong>{namePreview}</strong> (en minúsculas, sin espacios de sobra).
               </span>
             ) : (
-              <span className="field-help">Se guarda en minúsculas para que encuentres productos ya creados.</span>
+            <span className="field-help">Ejemplo: jugo de papaya.</span>
             )}
           </div>
 
@@ -320,7 +392,7 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
                 </option>
               ))}
             </select>
-            <span className="field-help">Ayuda a agruparlo en el catálogo y a compararlo con productos parecidos.</span>
+            <span className="field-help">Elige dónde lo encontrarás en el catálogo.</span>
           </div>
 
           <label className={isActive ? "checkbox-field" : "checkbox-field checkbox-field--off"}>
@@ -342,16 +414,16 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
               </span>
             )}
           </label>
-        </section>
+          </section>
+        </div>
 
-        {/* ===== 3. Precio + sugerencia ===== */}
-        <section className="form-section">
+        {step === 4 && <section className="form-section">
           <header className="form-section__head">
-            <span className="form-section__num">3</span>
+            <span className="form-section__num">4</span>
             <div className="min-w-0">
-              <h3 className="form-section__title">Precio base</h3>
+              <h3 className="form-section__title">Precio y confirmar</h3>
               <p className="form-section__hint">
-                Es el precio del tamaño más pequeño (por ejemplo, el personal). Los otros tamaños suman su recargo.
+                Revisa el precio y confirma el producto.
               </p>
             </div>
           </header>
@@ -390,16 +462,15 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
               currentMargin={currentMargin}
             />
           </div>
-        </section>
+        </section>}
 
-        {/* ===== 4. Receta ===== */}
-        <section className="form-section">
+        {step === 3 && <section className="form-section">
           <header className="form-section__head">
-            <span className="form-section__num">4</span>
+            <span className="form-section__num">3</span>
             <div className="min-w-0">
-              <h3 className="form-section__title">Receta: qué insumos se descuentan</h3>
+              <h3 className="form-section__title">Qué insumos descuenta</h3>
               <p className="form-section__hint">
-                Marca lo que lleva cada venta. Así el inventario baja solo al vender.
+                Indica cuánto usa una venta. Estas cantidades se descontarán del inventario.
               </p>
             </div>
           </header>
@@ -416,16 +487,15 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
               {decimalRecipeError}
             </p>
           )}
-        </section>
+        </section>}
 
-        {/* ===== 5. Opciones ===== */}
-        <section className="form-section">
+        {step === 2 && <section className="form-section">
           <header className="form-section__head">
-            <span className="form-section__num">5</span>
+            <span className="form-section__num">2</span>
             <div className="min-w-0">
-              <h3 className="form-section__title">Opciones que puede elegir el cliente</h3>
+              <h3 className="form-section__title">¿Qué puede elegir el cliente?</h3>
               <p className="form-section__hint">
-                Activa los grupos que aplican a este producto (fruta, base, endulzante…).
+                Marca las opciones que aparecerán al registrar la venta.
               </p>
             </div>
           </header>
@@ -457,11 +527,10 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
                     className="checkbox-hidden"
                   />
                   <span className="option-chip__name">
-                    <Tag size={16} aria-hidden /> {group.name}
+                    {checked ? <Check size={18} aria-hidden /> : <Tag size={16} aria-hidden />} {group.name}
                   </span>
                   <span className="option-chip__meta">
                     {group.options.filter((o) => o.is_active).length} opciones
-                    {isSize ? " · se activa con “Jugo”" : ""}
                   </span>
                 </label>
               );
@@ -470,7 +539,7 @@ export function ProductFormModal({ product, products = [], onClose, onSaved }: P
               <p className="text-secondary text-aux">Todavía no hay grupos de opciones creados.</p>
             )}
           </div>
-        </section>
+        </section>}
 
         {error && (
           <p className="field-error" role="alert">
@@ -525,7 +594,7 @@ function PriceSuggestionCard({
           disabled={suggested <= 0}
           onClick={onApply}
         >
-          <Wand2 size={20} aria-hidden /> Usar
+          <Wand2 size={20} aria-hidden /> Usar este precio
         </button>
       </div>
 

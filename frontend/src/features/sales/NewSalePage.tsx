@@ -117,6 +117,7 @@ export function NewSalePage() {
       cart.clear();
       setMessage("Orden guardada.");
       void queryClient.invalidateQueries({ queryKey: ["orders"] });
+      void queryClient.invalidateQueries({ queryKey: ["orders-counts"] });
       setTimeout(() => setMessage(null), 2200);
     } catch (e) {
       setError((e as Error).message);
@@ -135,6 +136,7 @@ export function NewSalePage() {
     const response = await api.post<OrderResponse>("/orders", payload, uuid());
     cart.clear();
     void queryClient.invalidateQueries({ queryKey: ["orders"] });
+    void queryClient.invalidateQueries({ queryKey: ["orders-counts"] });
     void queryClient.invalidateQueries({ queryKey: ["dashboard"] });
     return response.order;
   };

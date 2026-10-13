@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Banknote, Smartphone, CheckCircle2 } from "lucide-react";
 import { Modal } from "../../components/ui/Modal";
 import { formatMoney } from "../../lib/currency";
+import { ApiError } from "../../lib/api";
 import type { Order } from "../../types";
 
 interface PaymentModalProps {
@@ -42,7 +43,9 @@ export function PaymentModal({ total, onConfirm, onClose, onRegisterAnother, onW
         setStep("done");
       }
     } catch (e) {
-      setError((e as Error).message);
+      setError(e instanceof ApiError && e.code === "INVALID_ORDER_STATE"
+        ? "La orden fue actualizada."
+        : "No se pudo registrar el pago. Intenta nuevamente.");
     } finally {
       setSaving(false);
     }

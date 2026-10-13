@@ -15,7 +15,6 @@ export function useOnlineStatus(onReconnect?: () => void): boolean {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return online;

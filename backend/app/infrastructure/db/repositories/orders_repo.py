@@ -81,7 +81,10 @@ def list_orders(
         conditions.append(OrderModel.order_type == order_type)
     if search:
         like = f"%{search.strip()}%"
-        search_condition = OrderModel.customer_name.ilike(like)
+        search_condition = (
+            OrderModel.customer_name.ilike(like)
+            | OrderModel.table_number.ilike(like)
+        )
         if search.strip().lstrip("#").isdigit():
             search_condition = search_condition | (OrderModel.id == int(search.strip().lstrip("#")))
         conditions.append(search_condition)

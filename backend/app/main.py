@@ -1,6 +1,7 @@
 """Tía Julia API — FastAPI application entry point."""
 
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,6 +19,8 @@ from app.presentation.api.v1.routers import (
     orders_router,
     reports_router,
 )
+
+load_dotenv()
 
 
 @asynccontextmanager

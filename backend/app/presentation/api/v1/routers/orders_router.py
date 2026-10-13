@@ -10,6 +10,7 @@ from app.application.dto import (
     OrderCreate,
     OrderDTO,
     OrderDetailAdd,
+    OrderDetailsAdd,
     OrderDetailUpdate,
     OrderListDTO,
     PayOrderRequest,
@@ -131,6 +132,23 @@ def get_order(order_id: int, db: Session = Depends(get_db)):
 @router.post("/orders/{order_id}/details", status_code=201)
 def add_detail(order_id: int, item: OrderDetailAdd, db: Session = Depends(get_db)):
     result = orders_use_case.add_detail(db, order_id, item)
+    return {
+        "order": _order_to_dto(result.order),
+        "inventory_alerts": [
+            {
+                "ingredient_id": a.ingredient_id,
+                "ingredient_name": a.ingredient_name,
+                "requested": a.requested,
+                "available": a.available,
+            }
+            for a in result.inventory_alerts
+        ],
+    }
+
+
+@router.post("/orders/{order_id}/details/batch", status_code=201)
+def add_details(order_id: int, data: OrderDetailsAdd, db: Session = Depends(get_db)):
+    result = orders_use_case.add_details(db, order_id, data.items)
     return {
         "order": _order_to_dto(result.order),
         "inventory_alerts": [
